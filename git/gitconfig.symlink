@@ -4,10 +4,13 @@
 [hub]
         protocol = https
 [alias]
+        c = commit -m
+        a = !git add -u && git add . && git status -s
         co = checkout
-        promote = !$ZSH/bin/git-promote
-        wtf     = !$ZSH/bin/git-wtf
-        rank-contributors = !$ZSH/bin/git-rank-contributors
+        
+        # promote = !$ZSH/bin/git-promote
+        # wtf     = !$ZSH/bin/git-wtf
+        # rank-contributors = !$ZSH/bin/git-rank-contributors
         count   = !git shortlog -sn
 [color]
         diff = auto

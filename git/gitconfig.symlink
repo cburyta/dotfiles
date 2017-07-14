@@ -7,6 +7,7 @@
         c = commit -m
         a = !git add -u && git add . && git status -s
         co = checkout
+        st = !git status -sb
         
         # promote = !$ZSH/bin/git-promote
         # wtf     = !$ZSH/bin/git-wtf

@@ -27,9 +27,13 @@ brew 'libgit2'          # git bindings for various langs
 brew 'openssl'          # encryption stuff
 # brew 'node'           # will try using nodeenv
 brew 'readline'         # terminal output in place editing
+brew 'reattach-to-user-namespace' # fix osx issue with tmux exited after start
 brew 'spaceman-diff'    # display images in git diffs
+brew 'tmux'             # osx delete for moving to trash
+brew 'trash'            # osx delete for moving to trash
 brew 'unrar'            # file compression tools
 brew 'wget'             # wget stuff
+brew 'macvim', args: ['override-system-vim']
 
 # cask 'firefox'
 # cask 'google-chrome'

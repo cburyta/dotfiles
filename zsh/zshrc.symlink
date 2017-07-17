@@ -12,6 +12,9 @@ then
   source ~/.localrc
 fi
 
+# lang files to help with various things
+export LANG=en_US.UTF-8
+
 # all of our zsh files
 typeset -U config_files
 config_files=($ZSH/**/*.zsh)
@@ -48,3 +51,7 @@ zle -N up-line-or-beginning-search
 zle -N down-line-or-beginning-search
 bindkey "^[[A" up-line-or-beginning-search # Up
 bindkey "^[[B" down-line-or-beginning-search # Down
+
+export CLICOLOR=1
+BASE16_SHELL="$HOME/.iterm2/base16-shell/scripts/base16-bespin.sh"
+[[ -s $BASE16_SHELL ]] && . $BASE16_SHELL

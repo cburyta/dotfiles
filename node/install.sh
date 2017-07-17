@@ -3,3 +3,5 @@
 # then
 #   sudo npm install spoof -g
 # fi
+
+# @todo: install aand use nodeenv

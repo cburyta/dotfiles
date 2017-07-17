@@ -44,3 +44,4 @@ brew 'macvim', args: ['override-system-vim']
 # cask 'transmission'
 # cask 'tunnelbear'
 # cask 'vlc'
+cask 'caskroom/fonts/font-menlo-for-powerline'

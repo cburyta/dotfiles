@@ -22,6 +22,7 @@ Plugin 'christoomey/vim-tmux-navigator' " enable vim + tmux nav via C-hjkl
 " statusbar
 Plugin 'vim-airline/vim-airline'
 Plugin 'vim-airline/vim-airline-themes'
+" Plugin 'powerline/powerline'
 
 " colorschemes
 Plugin 'chriskempson/base16-vim'
@@ -35,6 +36,7 @@ call vundle#end()
 """"""""""""""""""""""""""""""""""""""""""""""""""""
 " General
 """"""""""""""""""""""""""""""""""""""""""""""""""""
+let g:airline_powerline_fonts = 1
 
 " wrap git commit files at the appropriate length
 filetype plugin indent on

@@ -54,4 +54,7 @@ bindkey "^[[B" down-line-or-beginning-search # Down
 
 export CLICOLOR=1
 BASE16_SHELL="$HOME/.iterm2/base16-shell/scripts/base16-bespin.sh"
-[[ -s $BASE16_SHELL ]] && . $BASE16_SHELL
+if [ -s $BASE16_SHELL ]; then
+    chmod +x $BASE16_SHELL
+    . $BASE16_SHELL
+fi

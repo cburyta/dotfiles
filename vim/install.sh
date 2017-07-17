@@ -3,7 +3,7 @@ VUNDLE_DIR=$HOME/.vim/bundle
 
 # install base16 color theme
 if [ ! -d $BASE16_SHELL_DIR/base16-shell ]; then
-    mkdir -p $HOME/.iterm2
+    mkdir -p $BASE16_SHELL_DIR
     git clone git@github.com:chriskempson/base16-shell.git $BASE16_SHELL_DIR/base16-shell
 fi
 
@@ -16,6 +16,7 @@ if [ ! -d $VUNDLE_DIR/vundle ]; then
     git clone https://github.com/VundleVim/Vundle.vim.git $VUNDLE_DIR/vundle
     
     echo "> Installing Vundle after clone"
-    vim +PluginInstall +qall
 fi
+
+vim +PluginInstall +qall
 

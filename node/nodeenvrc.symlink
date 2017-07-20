@@ -1,0 +1,10 @@
+[nodeenv]
+debug = False
+jobs = 2
+make = make
+node = latest
+npm = latest
+prebuilt = True
+profile = False
+with_npm = False
+without_ssl = False

@@ -180,6 +180,7 @@ endfunction
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Plugin settings
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+map <D-a> :NERDTreeToggle<cr>
 
 " open nerdtree initially
 autocmd vimenter * NERDTree

@@ -4,4 +4,12 @@
 #   sudo npm install spoof -g
 # fi
 
-# @todo: install aand use nodeenv
+# requires python/pip, our Brewfile should handle that
+pip install nodeenv
+
+# install envs per project via...
+#     nodeenv --prebuilt --node=8.2.0 env
+# results in `env` directory, and can be activated via...
+#     . ./env/bin/activate
+# deactivated via...
+#     deactivate_node

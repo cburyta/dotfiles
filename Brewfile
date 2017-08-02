@@ -15,6 +15,7 @@ cask_args appdir: '/Applications'
 
 tap 'homebrew/bundle'   # bundler for homebrew
 tap 'caskroom/fonts'    # fonts for things like powerline fonts
+tap 'caskroom/cask'     # some extra casks to install
 
 brew 'ack'              # good code search
 brew 'cheat'            # cheatcheets on the cli
@@ -28,7 +29,7 @@ brew 'grc'              # generic colorizer: [https://github.com/pengwynn/grc]
 brew 'libgit2'          # git bindings for various langs
 brew 'openssl'          # encryption stuff
 # brew 'node'           # will try using nodeenv
-brew python             # core dep for installing nodeenv
+brew 'python'             # core dep for installing nodeenv
 brew 'readline'         # terminal output in place editing
 brew 'reattach-to-user-namespace' # fix osx issue with tmux exited after start
 brew 'spaceman-diff'    # display images in git diffs
@@ -49,3 +50,4 @@ brew 'macvim', args: ['override-system-vim']
 # cask 'vlc'
 cask 'chefdk'
 cask 'font-menlo-for-powerline'
+cask 'xquartz'

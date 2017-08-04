@@ -44,6 +44,10 @@ call vundle#end()
 let g:airline_powerline_fonts = 1
 let g:airline_theme='wombat'
 
+" optimization in iterm
+" set nocursorline
+autocmd FileType nerdtree set nocursorline
+
 " wrap git commit files at the appropriate length
 filetype plugin indent on
 

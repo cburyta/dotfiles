@@ -54,7 +54,7 @@ bindkey "^[[B" down-line-or-beginning-search # Down
 
 # export CLICOLOR=true
 # export BASE16_SHELL="$HOME/.iterm2/base16-shell"
-# export TERM='screen-256color'
+export TERM='screen-256color'
 #. $BASE16_SHELL/scripts/base16-bespin.sh
 # [ -n "$PS1" ] && [ -s $BASE16_SHELL/profile_helper.sh ] && eval "$($BASE16_SHELL/profile_helper.sh)"
 # [ -n "$PS1" ] && [ -s $BASE16_SHELL/scripts/base16-bespin.sh ] && . $BASE16_SHELL/scripts/base16-bespin.sh

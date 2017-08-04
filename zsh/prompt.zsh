@@ -67,9 +67,11 @@ nodeenv_current() {
     fi
 }
 
-export PROMPT=$'\n$(battery_status)in $(directory_name)$(nodeenv_current) $(git_dirty)$(need_push)\n› '
+
 set_prompt () {
   export RPROMPT="%{$fg_bold[cyan]%}%{$reset_color%}"
+  export PROMPT=$'$(battery_status)in $(directory_name)$(nodeenv_current) $(git_dirty)$(need_push)› '
+  # export PROMPT=$'\n$(battery_status)in $(directory_name)$(nodeenv_current) $(git_dirty)$(need_push)\n› '
 }
 
 precmd() {

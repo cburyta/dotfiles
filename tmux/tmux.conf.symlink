@@ -58,6 +58,9 @@ bind -r J resize-pane -D 10
 bind -r K resize-pane -U 10
 bind -r L resize-pane -R 10
 
+# toggle pane full/normal size
+bind u resize-pane -Z
+
 # enable mouse support for switching panes/windows
 # NOTE: This breaks selecting/copying text on OSX
 # To select text as expected, hold Option to disable it (iTerm2)

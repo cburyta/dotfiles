@@ -18,6 +18,7 @@ Plugin 'benmills/vimux'
 Plugin 'tpope/vim-fugitive' " the ultimate git helper
 Plugin 'tpope/vim-commentary' " comment/uncomment lines with gcc or gc in visual mode
 Plugin 'christoomey/vim-tmux-navigator' " enable vim + tmux nav via C-hjkl
+Plugin 'vim-syntastic/syntastic' " used for sweet sweet syntax (and stuff)
 
 " statusbar
 Plugin 'vim-airline/vim-airline'
@@ -25,11 +26,15 @@ Plugin 'vim-airline/vim-airline-themes'
 " Plugin 'powerline/powerline'
 
 " colorschemes
-Plugin 'chriskempson/base16-vim'
+" Plugin 'chriskempson/base16-vim'
 
-" JavaScript plugins
+" JavaScript / Typescript plugins
 Plugin 'pangloss/vim-javascript'
 Plugin 'jelera/vim-javascript-syntax'
+Plugin 'leafgarland/typescript-vim'
+
+" PHP / Twig
+Plugin 'nelsyeung/twig.vim'
 
 call vundle#end()
 
@@ -37,10 +42,13 @@ call vundle#end()
 " General
 """"""""""""""""""""""""""""""""""""""""""""""""""""
 let g:airline_powerline_fonts = 1
-"let g:airline_theme='base16-phd'
+let g:airline_theme='wombat'
 
 " wrap git commit files at the appropriate length
 filetype plugin indent on
+
+" disable soft-wrap
+set nowrap
 
 set nocompatible " not compatible with vi
 set autoread " detect when a file is changed
@@ -180,12 +188,50 @@ endfunction
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Plugin settings
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+" syntastic
+" set statusline+=%#warningmsg#
+" set statusline+=%{SyntasticStatuslineFlag()}
+" set statusline+=%*
+" let g:syntastic_always_populate_loc_list = 1
+" let g:syntastic_auto_loc_list = 1
+" let g:syntastic_check_on_open = 1
+" let g:syntastic_check_on_wq = 0
+
+" typescript
+let g:typescript_compiler_binary = 'tsc'
+let g:typescript_compiler_options = ''
+autocmd QuickFixCmdPost [^l]* nested cwindow
+autocmd QuickFixCmdPost    l* nested lwindow
+
+
 map <D-a> :NERDTreeToggle<cr>
 
 " open nerdtree initially
-autocmd vimenter * NERDTree
+" autocmd vimenter * NERDTree
+function! StartUp()
+    if 0 == argc() " if opened via 'vim', focus on sidebar nerdtree
+        execute 'NERDTree' getcwd()
+        execute 'NERDTreeFocus'
+    elseif 1 == argc() && isdirectory(argv()[0]) " if opened passing directory via 'vim ..', close the nerdtree in main window, and focus on sidebar nerdtree
+        execute 'NERDTree' getcwd()
+        execute 'NERDTreeFocus'
+        execute 'wincmd l'
+        execute ':q'
+    else " if opened with any file via 'vim file.txt', open nerd tree to that files dir, and focus on the file
+        execute 'NERDTree' getcwd() . '/' . argv(0)
+        execute 'wincmd l'
+    endif
+
+endfunction
+
+autocmd VimEnter * call StartUp()
+
+" Vim - Prevent NERDTree opening when invoked by git
+autocmd VimEnter * if &filetype ==# 'gitcommit' | NERDTreeClose | endif
+
 " focus cursor on opened file initially
-autocmd vimenter * wincmd l
+" autocmd vimenter * wincmd l
 
 " Make nerdtree look nice
 let NERDTreeMinimalUI = 1

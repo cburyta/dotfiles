@@ -5,7 +5,7 @@
 # fi
 
 # requires python/pip, our Brewfile should handle that
-pip install nodeenv
+# pip install nodeenv
 
 # install envs per project via...
 #     nodeenv --prebuilt --node=8.2.0 env

@@ -38,6 +38,7 @@ brew 'trash'            # osx delete for moving to trash
 brew 'unrar'            # file compression tools
 brew 'wget'             # wget stuff
 brew 'macvim', args: ['override-system-vim']
+brew 'nodeenv'
 
 # cask 'firefox'
 # cask 'google-chrome'

@@ -202,6 +202,21 @@ endfunction
 " let g:syntastic_check_on_open = 1
 " let g:syntastic_check_on_wq = 0
 
+" this is a straight string compare, if the message contains the string below,
+" it will not throw the error and will not warn us
+let g:syntastic_html_tidy_ignore_errors = [
+    \ "proprietary attribute",
+    \ 'trimming empty <',
+    \ "inserting implicit",
+    \ "unescaped \&",
+    \ "lacks action",
+    \ "lacks value",
+    \ "lacks src",
+    \ "is not recognized!",
+    \ "discarding unexpected",
+    \ '> attribute name "',
+    \ "replacing obsolete" ]
+
 " typescript
 let g:typescript_compiler_binary = 'tsc'
 let g:typescript_compiler_options = ''

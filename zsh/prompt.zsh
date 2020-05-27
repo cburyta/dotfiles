@@ -70,7 +70,13 @@ nodeenv_current() {
 
 set_prompt () {
   export RPROMPT="%{$fg_bold[cyan]%}%{$reset_color%}"
-  export PROMPT=$'$(battery_status)in $(directory_name)$(nodeenv_current) $(git_dirty)$(need_push)› '
+
+  # With battery status (contains a bug with text wrapping)
+  # export PROMPT=$'$(battery_status)in $(directory_name)$(nodeenv_current) $(git_dirty)$(need_push)› '
+  #
+  # Without battery status
+  export PROMPT=$'in $(directory_name)$(nodeenv_current) $(git_dirty)$(need_push)› '
+
   # export PROMPT=$'\n$(battery_status)in $(directory_name)$(nodeenv_current) $(git_dirty)$(need_push)\n› '
 }
 

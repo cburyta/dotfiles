@@ -13,7 +13,12 @@ then
 fi
 
 # lang files to help with various things
+# export LANG=en_US.UTF-8
+# export LC_CTYPE=en_US.UTF-8
 export LANG=en_US.UTF-8
+# export LC_CTYPE=en_US.UTF-8
+# export LC_COLLATE=C
+# export LC_NUMERIC=C
 
 # all of our zsh files
 typeset -U config_files
@@ -58,4 +63,29 @@ export TERM='screen-256color'
 #. $BASE16_SHELL/scripts/base16-bespin.sh
 # [ -n "$PS1" ] && [ -s $BASE16_SHELL/profile_helper.sh ] && eval "$($BASE16_SHELL/profile_helper.sh)"
 # [ -n "$PS1" ] && [ -s $BASE16_SHELL/scripts/base16-bespin.sh ] && . $BASE16_SHELL/scripts/base16-bespin.sh
+
+# # iTerm2 Status Bar Helpers
+# # ------------------------
+# # See https://www.iterm2.com/3.3/documentation-scripting-fundamentals.html
+# function iterm2_print_user_vars() {
+#   iterm2_set_user_var phpVersion $(php -v | awk '/^PHP/ { print $2 }')
+#   iterm2_set_user_var rubyVersion $(ruby -v | awk '{ print $2 }')
+#   iterm2_set_user_var nodeVersion $(node -v)
+#   iterm2_set_user_var pythonVersion $(python --version)
+# }
+
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$('/usr/local/anaconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "/usr/local/anaconda3/etc/profile.d/conda.sh" ]; then
+        . "/usr/local/anaconda3/etc/profile.d/conda.sh"
+    else
+        export PATH="/usr/local/anaconda3/bin:$PATH"
+    fi
+fi
+unset __conda_setup
+# <<< conda initialize <<<
 

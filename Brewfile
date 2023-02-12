@@ -13,9 +13,9 @@
 # ensure apps installed in main app directory
 cask_args appdir: '/Applications'
 
-tap 'homebrew/bundle'   # bundler for homebrew
-tap 'caskroom/fonts'    # fonts for things like powerline fonts
-tap 'caskroom/cask'     # some extra casks to install
+tap 'homebrew/bundle'       # bundler for homebrew
+tap 'homebrew/cask-fonts'   # fonts for things like powerline fonts
+tap 'homebrew/cask'         # some extra casks to install
 
 brew 'ack'              # good code search
 brew 'cheat'            # cheatcheets on the cli
@@ -37,8 +37,12 @@ brew 'tmux'             # osx delete for moving to trash
 brew 'trash'            # osx delete for moving to trash
 brew 'unrar'            # file compression tools
 brew 'wget'             # wget stuff
-brew 'macvim', args: ['override-system-vim']
-brew 'nodeenv'
+# brew 'macvim', args: ['override-system-vim']
+brew 'macvim'
+# brew 'nodeenv'          # replaced with fnm (fast node manager)
+brew 'fnm'              # https://github.com/Schniz/fnm
+brew 'mirror-displays'  # alfred workflow support
+brew 'groovy'           # jetbrains ide groovy stuff
 
 # cask 'firefox'
 # cask 'google-chrome'
@@ -49,6 +53,6 @@ brew 'nodeenv'
 # cask 'transmission'
 # cask 'tunnelbear'
 # cask 'vlc'
-cask 'chefdk'
-cask 'font-menlo-for-powerline'
-cask 'xquartz'
+# cask 'chefdk'
+brew 'font-menlo-for-powerline'
+brew 'xquartz'

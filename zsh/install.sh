@@ -1,11 +1,11 @@
-BASE16_SHELL_DIR=$HOME/.iterm2
+# BASE16_SHELL_DIR=$HOME/.iterm2
 VUNDLE_DIR=$HOME/.vim/bundle
 
 # install base16 color theme
-if [ ! -d $BASE16_SHELL_DIR/base16-shell ]; then
-    mkdir -p $BASE16_SHELL_DIR
-    git clone git@github.com:chriskempson/base16-shell.git $BASE16_SHELL_DIR/base16-shell
-fi
+# if [ ! -d $BASE16_SHELL_DIR/base16-shell ]; then
+#     mkdir -p $BASE16_SHELL_DIR
+#     git clone git@github.com:chriskempson/base16-shell.git $BASE16_SHELL_DIR/base16-shell
+# fi
 
 # ensure vundle plugin directory exists
 mkdir -p $VUNDLE_DIR

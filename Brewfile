@@ -21,14 +21,8 @@ brew 'ack'              # good code search
 brew 'cheat'            # cheatcheets on the cli
 brew 'coreutils'        # dep for some stuff, including GNU utilities
 brew 'grc'              # generic colorizer: [https://github.com/pengwynn/grc]
-# brew 'imagemagick'    # image manipulation
-# brew 'jp2a'           # jp2a is a small utility that converts JPG images to ASCII
-# brew 'jq'             # json query lang: [http://jmespath.org/]
-# graphics library that outputs text instead of pixels
-# brew 'libcaca', args: ['with-imlib2']
 brew 'libgit2'          # git bindings for various langs
 brew 'openssl'          # encryption stuff
-# brew 'node'           # will try using nodeenv
 brew 'python'             # core dep for installing nodeenv
 brew 'readline'         # terminal output in place editing
 brew 'reattach-to-user-namespace' # fix osx issue with tmux exited after start
@@ -37,9 +31,7 @@ brew 'tmux'             # osx delete for moving to trash
 brew 'trash'            # osx delete for moving to trash
 brew 'unrar'            # file compression tools
 brew 'wget'             # wget stuff
-# brew 'macvim', args: ['override-system-vim']
-brew 'macvim'
-# brew 'nodeenv'          # replaced with fnm (fast node manager)
+# brew 'macvim'
 brew 'fnm'              # https://github.com/Schniz/fnm
 brew 'mirror-displays'  # alfred workflow support
 brew 'groovy'           # jetbrains ide groovy stuff
@@ -55,4 +47,4 @@ brew 'groovy'           # jetbrains ide groovy stuff
 # cask 'vlc'
 # cask 'chefdk'
 brew 'font-menlo-for-powerline'
-brew 'xquartz'
+# brew 'xquartz'

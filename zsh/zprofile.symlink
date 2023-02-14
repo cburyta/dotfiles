@@ -1,0 +1,5 @@
+# Added by Toolbox App
+export PATH="$PATH:/Users/chris/Library/Application Support/JetBrains/Toolbox/scripts"
+
+# Result of the homebrew install
+eval "$(/opt/homebrew/bin/brew shellenv)"

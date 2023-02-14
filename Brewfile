@@ -29,11 +29,8 @@ brew 'reattach-to-user-namespace' # fix osx issue with tmux exited after start
 brew 'spaceman-diff'    # display images in git diffs
 brew 'tmux'             # osx delete for moving to trash
 brew 'trash'            # osx delete for moving to trash
-brew 'unrar'            # file compression tools
 brew 'wget'             # wget stuff
-# brew 'macvim'
 brew 'fnm'              # https://github.com/Schniz/fnm
-brew 'mirror-displays'  # alfred workflow support
 brew 'groovy'           # jetbrains ide groovy stuff
 
 # cask 'firefox'
@@ -46,5 +43,5 @@ brew 'groovy'           # jetbrains ide groovy stuff
 # cask 'tunnelbear'
 # cask 'vlc'
 # cask 'chefdk'
-brew 'font-menlo-for-powerline'
+# brew 'font-menlo-for-powerline'
 # brew 'xquartz'

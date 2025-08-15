@@ -14,7 +14,7 @@
 cask_args appdir: '/Applications'
 
 tap 'homebrew/bundle'       # bundler for homebrew
-tap 'homebrew/cask-fonts'   # fonts for things like powerline fonts
+# tap 'homebrew/cask-fonts'   # font's are now core to brew, not in a cask
 tap 'homebrew/cask'         # some extra casks to install
 
 # fonts

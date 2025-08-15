@@ -1,4 +1,17 @@
 .DS_Store
 *~
 *.swp
+.jj
+/.local
+/.docs
+
+# editors
+/.vscode
 /.idea
+
+# personal todos in projects
+.tasks
+
+# agents
+.junie
+.cursor

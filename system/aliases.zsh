@@ -8,6 +8,11 @@ then
   alias ll="gls -l --color"
 fi
 
+if #(gmake &>/dev/null)
+then
+  alias make="gmake"
+fi
+
 # exa overides for ls
 #   `brew install exa`
 if $(exa &>/dev/null)

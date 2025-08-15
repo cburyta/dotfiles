@@ -1,8 +1,8 @@
-alias d='docker $*'
-alias d-c='docker-compose $*'
-alias dcu='d-c up $*'
-alias dce='d-c exec $*'
-alias dcr='d-c run --rm $*'
+# alias d='docker $*'
+alias dc='docker compose $*'
+alias dcu='dc up $*'
+alias dce='dc exec $*'
+alias dcr='dc run --rm $*'
 
 # shortcut to reference a CI file, assuming the filename and path
-alias dci='docker-compose -f docker-compose-ci.yml $*'
+alias dci='docker compose -f docker-compose-ci.yml $*'

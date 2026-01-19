@@ -88,6 +88,8 @@ export PATH="/usr/local/opt/mysql-client/bin:$PATH"
 
 export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
 
+export PATH="$HOME/go/bin:$PATH"
+
 # fast node manager, looks for .node-version and .nvmrc files
 eval "$(fnm env --use-on-cd)"
 
@@ -105,3 +107,6 @@ export PATH="$PATH:/Users/chris/.lmstudio/bin"
 fpath+=~/.zfunc; autoload -Uz compinit; compinit
 
 zstyle ':completion:*' menu select
+
+# Added by Cursor CLI
+# eval "$(~/.local/bin/cursor-agent shell-integration zsh)"

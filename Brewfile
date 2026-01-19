@@ -12,43 +12,87 @@ cask_args appdir: '/Applications'
 
 # Taps for additional repositories
 tap 'homebrew/bundle'       # Homebrew Bundle for managing formulae and casks
+tap 'derailed/k9s'          # k9s
+tap 'git-chglog/git-chglog' # git-chglog
+tap 'hashicorp/tap'         # packer, terraform
+tap 'nilukush/ytt'          # youtube-transcript-tools
+tap 'qmk/qmk'               # qmk
+tap 'sst/tap'               # opencode
 # tap 'homebrew/cask-fonts'   # Font management is now integrated into Homebrew core, not in a separate tap
-tap 'homebrew/cask'         # Additional casks for installation
 
 # Fonts
-brew 'font-jetbrains-mono-nerd-font'
-brew 'font-meslo-lg-nerd-font'
-brew 'font-hack-nerd-font'
+cask 'font-jetbrains-mono-nerd-font'
+cask 'font-meslo-lg-nerd-font'
+cask 'font-hack-nerd-font'
 
 # Utilities and Development Tools
 brew 'ack'              # Code search tool
+brew 'argo'
+brew 'asdf'
+brew 'awscli'
+brew 'black'
+brew 'btop'
 brew 'cheat'            # Command-line cheat sheets
+brew 'cmake'
 brew 'coreutils'        # GNU utilities for Unix-like operating systems
+brew 'duckdb'
+brew 'ffmpeg'
+brew 'fnm'              # Node version manager
+brew 'gh'
+brew 'git-chglog/git-chglog/git-chglog'
+brew 'go'
+brew 'go-parquet-tools'
 brew 'grc'              # Generic colorizer
+brew 'groovy'           # Groovy programming language support
+brew 'helm'
+brew 'jj'
+brew 'kubectx'
+brew 'kustomize'
 brew 'libgit2'          # Git bindings for various programming languages
-brew 'openssl'          # Encryption and security utilities
-brew 'python'           # Core dependency for installing nodeenv
-brew 'readline'         # Terminal output editing capabilities
+brew 'librist'
+brew 'minio'
+brew 'minio-mc'
+brew 'neovim'
+brew 'nilukush/ytt/youtube-transcript-tools'
+brew 'openconnect'
+brew 'openvino'
+brew 'pipx'
+brew 'pkgconf'
+brew 'poetry'
+brew 'postgresql@14'
+brew 'pre-commit'
+brew 'python@3.10'
+brew 'qmk/qmk/qmk'
 brew 'reattach-to-user-namespace'  # Fix OS X issue with tmux exiting after startup
+brew 'saml2aws'         # AWS CLI from SAML, useful for accessing AWS resources via SAML
+brew 'skaffold'
 brew 'spaceman-diff'    # Display images in Git diffs
+brew 'sqlfluff'
+brew 'sqruff'
+brew 'sst/tap/opencode'
 brew 'tmux'             # Enhanced terminal multiplexer
 brew 'trash'            # Command for moving files to the Trash on OS X
-brew 'wget'             # Network utility for downloading files from the web
-brew 'fnm'              # Node version manager
-brew 'groovy'           # Groovy programming language support
-brew 'awscli'
-brew 'saml2aws'         # AWS CLI from SAML, useful for accessing AWS resources via SAML
-brew 'gnu-sed'
 brew 'tree'
-brew 'gmake'
-
-# Development Tools
-brew 'neovim'
-brew 'ripgrep'
+brew 'uv'
+brew 'watch'
+brew 'wget'             # Network utility for downloading files from the web
+brew 'yamllint'
+brew 'youtube-dl'
+brew 'yt-dlp'
 
 # Casks (Graphical User Interfaces)
 cask 'miniconda'        # Python environment management
-cask 'poetry'           # Dependency and packaging tool for Python applications
+cask 'alacritty'
+
+cask 'ghostty'
+cask 'gimp'
+cask 'hiddenbar'
+cask 'hot'
+# cask 'macfuse'
+cask 'macs-fan-control'
+cask 'qmk-toolbox'
+cask 'snowflake-snowsql'
+cask 'via'
 
 # Raspberry Pi related casks (commented out)
 # cask 'ext4fuse'         # Not needed, build from source if required

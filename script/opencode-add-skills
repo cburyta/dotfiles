@@ -1,0 +1,113 @@
+#!/bin/bash
+
+# Script to add skills to ~/.config/opencode/skills/ from GitHub repositories
+# Convention: Provide full GitHub blob URLs to SKILL.md files
+# Example: https://github.com/cburyta/obsidian-skills/blob/main/skills/json-canvas/SKILL.md
+# This creates ~/.config/opencode/skills/json-canvas/SKILL.md
+
+set -e
+
+OPENCODE_DIR="$HOME/.config/opencode"
+SKILLS_DIR="$OPENCODE_DIR/skills"
+
+# Hardcoded list of SKILL.md URLs
+SKILL_URLS=(
+    "https://github.com/cburyta/obsidian-skills/blob/main/skills/json-canvas/SKILL.md"
+    "https://github.com/cburyta/obsidian-skills/blob/main/skills/obsidian-bases/SKILL.md"
+    "https://github.com/cburyta/obsidian-skills/blob/main/skills/obsidian-markdown/SKILL.md"
+    # Add more URLs here as needed
+)
+
+# Ensure skills directory exists
+mkdir -p "$SKILLS_DIR"
+
+# Collect files that would be overwritten
+overwrites=()
+for url in "${SKILL_URLS[@]}"; do
+    # Parse URL to extract components
+    # URL format: https://github.com/owner/repo/blob/branch/path/to/skill/SKILL.md
+    path_part=$(echo "$url" | sed 's|https://github.com/||')
+    IFS='/' read -ra parts <<< "$path_part"
+    
+    if [ ${#parts[@]} -lt 5 ]; then
+        echo "Error: Invalid URL format: $url"
+        continue
+    fi
+    
+    owner="${parts[0]}"
+    repo="${parts[1]}"
+    branch="${parts[3]}"
+    
+    # Build path from parts 4 onwards
+    path=""
+    for ((i=4; i<${#parts[@]}; i++)); do
+        path+="${parts[$i]}/"
+    done
+    path=${path%/}  # remove trailing /
+    
+    # Skill name is the directory containing SKILL.md
+    skill_dir_path=$(dirname "$path")
+    skill_name=$(basename "$skill_dir_path")
+    
+    skill_dir="$SKILLS_DIR/$skill_name"
+    skill_file="$skill_dir/SKILL.md"
+    
+    if [ -f "$skill_file" ]; then
+        overwrites+=("$skill_file")
+    fi
+done
+
+# Prompt if any files would be overwritten
+if [ ${#overwrites[@]} -gt 0 ]; then
+    echo "The following files already exist and will be overwritten:"
+    for file in "${overwrites[@]}"; do
+        echo "  $file"
+    done
+    read -p "Do you want to overwrite all existing files? (y/n): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Aborted."
+        exit 0
+    fi
+fi
+
+# Process each URL
+for url in "${SKILL_URLS[@]}"; do
+    # Parse URL
+    path_part=$(echo "$url" | sed 's|https://github.com/||')
+    IFS='/' read -ra parts <<< "$path_part"
+    
+    owner="${parts[0]}"
+    repo="${parts[1]}"
+    branch="${parts[3]}"
+    
+    # Build path
+    path=""
+    for ((i=4; i<${#parts[@]}; i++)); do
+        path+="${parts[$i]}/"
+    done
+    path=${path%/}
+    
+    skill_dir_path=$(dirname "$path")
+    skill_name=$(basename "$skill_dir_path")
+    
+    skill_dir="$SKILLS_DIR/$skill_name"
+    skill_file="$skill_dir/SKILL.md"
+    
+    echo "Processing $url -> $skill_file"
+    
+    # Create skill directory
+    mkdir -p "$skill_dir"
+    
+    # Build raw URL
+    raw_url="https://raw.githubusercontent.com/$owner/$repo/$branch/$path"
+    
+    # Download the file
+    if curl -s "$raw_url" -o "$skill_file"; then
+        echo "Successfully added $skill_file"
+    else
+        echo "Error: Failed to download from $raw_url"
+    fi
+done
+
+echo "Done."

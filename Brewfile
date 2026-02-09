@@ -19,6 +19,7 @@ tap 'nilukush/ytt'          # youtube-transcript-tools
 tap 'qmk/qmk'               # qmk
 tap 'sst/tap'               # opencode
 # tap 'homebrew/cask-fonts'   # Font management is now integrated into Homebrew core, not in a separate tap
+# tap 'atlassian/homebrew-acli' # acli https://developer.atlassian.com/cloud/acli/guides/install-macos/
 
 # Fonts
 cask 'font-jetbrains-mono-nerd-font'
@@ -27,6 +28,7 @@ cask 'font-hack-nerd-font'
 
 # Utilities and Development Tools
 brew 'ack'              # Code search tool
+# brew 'atlassian/homebrew-acli/acli'
 brew 'argo'
 brew 'asdf'
 brew 'awscli'
@@ -45,6 +47,7 @@ brew 'go-parquet-tools'
 brew 'grc'              # Generic colorizer
 brew 'groovy'           # Groovy programming language support
 brew 'helm'
+brew 'jira-cli'
 brew 'jj'
 brew 'kubectx'
 brew 'kustomize'
@@ -77,11 +80,10 @@ brew 'uv'
 brew 'watch'
 brew 'wget'             # Network utility for downloading files from the web
 brew 'yamllint'
-brew 'youtube-dl'
 brew 'yt-dlp'
 
 # Casks (Graphical User Interfaces)
-cask 'miniconda'        # Python environment management
+# cask 'miniconda'        # Python environment management
 cask 'alacritty'
 
 cask 'ghostty'
@@ -115,3 +117,4 @@ cask 'via'
 # Additional Fonts and Tools (commented out)
 # brew 'font-menlo-for-powerline'
 # brew 'xquartz'
+brew "terraform"

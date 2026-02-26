@@ -1,0 +1,120 @@
+#!/bin/sh
+#
+# agent-hoist -- promote a skill/command from a tool directory
+#                into a central agents/ directory, then sync everywhere
+#
+# Hoists into the first directory in AGENT_PATH by default,
+# or a specific one with --dest.
+#
+# Usage:
+#   agent-hoist skill   ~/.claude/skills/my-skill
+#   agent-hoist command ~/.config/opencode/command/my-command.md
+#   agent-hoist skill   ~/.claude/skills/my-skill --dest ~/Repos/work/agents
+
+set -e
+
+AGENT_PATH="${AGENT_PATH:-$HOME/.dotfiles/agents}"
+
+usage() {
+  echo "Usage: agent-hoist <type> <source-path> [--dest <agents-dir>]"
+  echo ""
+  echo "Promotes agent config from a tool-specific location into"
+  echo "a central agents/ directory and re-syncs to all tools."
+  echo ""
+  echo "Destination defaults to the first entry in AGENT_PATH."
+  echo "Current AGENT_PATH: $AGENT_PATH"
+  echo ""
+  echo "Types:"
+  echo "  skill     A skill directory containing SKILL.md"
+  echo "  command   A command file (.md)"
+  echo ""
+  echo "Examples:"
+  echo "  agent-hoist skill   ~/.claude/skills/my-skill"
+  echo "  agent-hoist command ~/.config/opencode/command/my-command.md"
+  echo "  agent-hoist skill   ~/.claude/skills/my-skill --dest ~/Repos/work/agents"
+  exit 1
+}
+
+if [ $# -lt 2 ]; then
+  usage
+fi
+
+TYPE="$1"
+SOURCE="$2"
+shift 2
+
+DEST_ROOT=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --dest) DEST_ROOT="$2"; shift 2 ;;
+    *)
+      echo "Unknown option: $1" >&2
+      exit 1
+      ;;
+  esac
+done
+
+if [ -z "$DEST_ROOT" ]; then
+  DEST_ROOT=$(echo "$AGENT_PATH" | cut -d: -f1)
+fi
+
+case "$TYPE" in
+  skill)   DEST_DIR="$DEST_ROOT/skills" ;;
+  command) DEST_DIR="$DEST_ROOT/commands" ;;
+  *)
+    echo "Error: unknown type '$TYPE'. Must be skill or command." >&2
+    exit 1
+    ;;
+esac
+
+if [ ! -e "$SOURCE" ]; then
+  echo "Error: source path does not exist: $SOURCE" >&2
+  exit 1
+fi
+
+NAME=$(basename "$SOURCE")
+DEST="$DEST_DIR/$NAME"
+
+if [ "$TYPE" = "skill" ]; then
+  if [ ! -d "$SOURCE" ]; then
+    echo "Error: skill source must be a directory: $SOURCE" >&2
+    exit 1
+  fi
+  if [ ! -f "$SOURCE/SKILL.md" ]; then
+    echo "Warning: no SKILL.md found in $SOURCE" >&2
+  fi
+fi
+
+if [ -e "$DEST" ]; then
+  echo "Error: $DEST already exists. Remove it first or pick a different name." >&2
+  exit 1
+fi
+
+# If the source is already a symlink managed by agent-sync, nothing to do
+if [ -L "$SOURCE" ]; then
+  link_target=$(readlink "$SOURCE")
+  IFS=':'
+  for dir in $AGENT_PATH; do
+    case "$link_target" in
+      "$dir"*)
+        echo "$SOURCE is already managed by agent-sync (-> $link_target). Nothing to hoist."
+        exit 0
+        ;;
+    esac
+  done
+  unset IFS
+fi
+
+echo "Hoisting $TYPE '$NAME' into $DEST_DIR/"
+
+mkdir -p "$DEST_DIR"
+cp -R "$SOURCE" "$DEST"
+echo "  [copied] $SOURCE -> $DEST"
+
+rm -rf "$SOURCE"
+echo "  [removed] $SOURCE"
+
+echo ""
+echo "Running agent-sync to deploy everywhere..."
+echo ""
+agent-sync

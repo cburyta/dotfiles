@@ -1,0 +1,124 @@
+#!/bin/sh
+#
+# agent-sync -- deploy agent config from AGENT_PATH to tool-specific locations
+#
+# Scans each directory in AGENT_PATH for skills/ and commands/ subdirs,
+# then symlinks them into Claude, OpenCode, and other tool directories.
+#
+# AGENT_PATH is colon-separated, like PATH. Defaults to ~/.dotfiles/agents.
+#
+# Usage:
+#   agent-sync              # symlink everything
+#   agent-sync --copy       # hard-copy instead of symlink
+#   agent-sync --dry-run    # preview without changes
+
+set -e
+
+AGENT_PATH="${AGENT_PATH:-$HOME/.dotfiles/agents}"
+
+CLAUDE_SKILLS="$HOME/.claude/skills"
+CURSOR_SKILLS="$HOME/.cursor/skills"
+CURSOR_COMMANDS="$HOME/.cursor/commands"
+OPENCODE_SKILLS="$HOME/.config/opencode/skills"
+OPENCODE_COMMANDS="$HOME/.config/opencode/command"
+
+MODE="symlink"
+DRY_RUN=false
+
+for arg in "$@"; do
+  case "$arg" in
+    --copy)    MODE="copy" ;;
+    --dry-run) DRY_RUN=true ;;
+    --help|-h)
+      echo "Usage: agent-sync [--copy] [--dry-run]"
+      echo ""
+      echo "Deploys agent config from AGENT_PATH to tool-specific locations."
+      echo "AGENT_PATH is colon-separated (current: $AGENT_PATH)"
+      echo ""
+      echo "Options:"
+      echo "  --copy      Hard-copy files instead of symlinking"
+      echo "  --dry-run   Preview what would be done without making changes"
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $arg" >&2
+      exit 1
+      ;;
+  esac
+done
+
+link_or_copy() {
+  local src="$1"
+  local dest="$2"
+
+  if [ "$DRY_RUN" = true ]; then
+    echo "  [dry-run] $src -> $dest"
+    return
+  fi
+
+  if [ -L "$dest" ]; then
+    local current
+    current=$(readlink "$dest")
+    if [ "$current" = "$src" ]; then
+      echo "  [ok] $dest (already linked)"
+      return
+    fi
+    rm "$dest"
+  elif [ -e "$dest" ]; then
+    echo "  [warn] $dest exists and is not a symlink, skipping"
+    return
+  fi
+
+  mkdir -p "$(dirname "$dest")"
+
+  if [ "$MODE" = "copy" ]; then
+    cp -R "$src" "$dest"
+    echo "  [copied] $src -> $dest"
+  else
+    ln -s "$src" "$dest"
+    echo "  [linked] $src -> $dest"
+  fi
+}
+
+synced=0
+
+IFS=':'
+for agents_dir in $AGENT_PATH; do
+  unset IFS
+
+  [ -d "$agents_dir" ] || continue
+  echo "source: $agents_dir"
+
+  # Skills -> Claude + Cursor + OpenCode
+  if [ -d "$agents_dir/skills" ]; then
+    for skill in "$agents_dir/skills"/*/; do
+      [ -d "$skill" ] || continue
+      name=$(basename "$skill")
+      echo "  skill: $name"
+      link_or_copy "$skill" "$CLAUDE_SKILLS/$name"
+      link_or_copy "$skill" "$CURSOR_SKILLS/$name"
+      link_or_copy "$skill" "$OPENCODE_SKILLS/$name"
+      synced=$((synced + 1))
+    done
+  fi
+
+  # Commands -> Cursor + OpenCode
+  if [ -d "$agents_dir/commands" ]; then
+    for cmd in "$agents_dir/commands"/*; do
+      [ -f "$cmd" ] || continue
+      name=$(basename "$cmd")
+      echo "  command: $name"
+      link_or_copy "$cmd" "$CURSOR_COMMANDS/$name"
+      link_or_copy "$cmd" "$OPENCODE_COMMANDS/$name"
+      synced=$((synced + 1))
+    done
+  fi
+done
+unset IFS
+
+if [ "$synced" -eq 0 ]; then
+  echo "Nothing to sync. Add skills or commands to a directory in AGENT_PATH."
+else
+  echo ""
+  echo "Synced $synced item(s)."
+fi

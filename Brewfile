@@ -19,12 +19,16 @@ tap 'nilukush/ytt'          # youtube-transcript-tools
 tap 'qmk/qmk'               # qmk
 tap 'sst/tap'               # opencode
 # tap 'homebrew/cask-fonts'   # Font management is now integrated into Homebrew core, not in a separate tap
-# tap 'atlassian/homebrew-acli' # acli https://developer.atlassian.com/cloud/acli/guides/install-macos/
+tap 'marcus/tap'
+tap 'AlexsJones/llmfit'     # llmfit
 
 # Fonts
 cask 'font-jetbrains-mono-nerd-font'
 cask 'font-meslo-lg-nerd-font'
 cask 'font-hack-nerd-font'
+
+# Other casks
+cask 'claude-code'
 
 # Utilities and Development Tools
 brew 'ack'              # Code search tool
@@ -51,8 +55,12 @@ brew 'jira-cli'
 brew 'jj'
 brew 'kubectx'
 brew 'kustomize'
+brew 'lazygit'
 brew 'libgit2'          # Git bindings for various programming languages
 brew 'librist'
+brew 'llmfit'
+brew 'marcus/tap/sidecar' # Agentic workflow optics
+brew 'marcus/tap/td'      # Agentic task tracking (sidecar)
 brew 'minio'
 brew 'minio-mc'
 brew 'neovim'
@@ -64,7 +72,8 @@ brew 'pkgconf'
 brew 'poetry'
 brew 'postgresql@14'
 brew 'pre-commit'
-brew 'python@3.10'
+brew 'python@3.10', link: false
+brew 'python@3.12', link: true
 brew 'qmk/qmk/qmk'
 brew 'reattach-to-user-namespace'  # Fix OS X issue with tmux exiting after startup
 brew 'saml2aws'         # AWS CLI from SAML, useful for accessing AWS resources via SAML
@@ -73,6 +82,7 @@ brew 'spaceman-diff'    # Display images in Git diffs
 brew 'sqlfluff'
 brew 'sqruff'
 brew 'sst/tap/opencode'
+brew 'gromgit/brewtils/taproom'
 brew 'tmux'             # Enhanced terminal multiplexer
 brew 'trash'            # Command for moving files to the Trash on OS X
 brew 'tree'

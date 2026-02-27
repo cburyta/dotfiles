@@ -21,6 +21,7 @@ tap 'sst/tap'               # opencode
 # tap 'homebrew/cask-fonts'   # Font management is now integrated into Homebrew core, not in a separate tap
 tap 'marcus/tap'
 tap 'AlexsJones/llmfit'     # llmfit
+tap 'charmbracelet/tap'     # tui based git repo host
 
 # Fonts
 cask 'font-jetbrains-mono-nerd-font'
@@ -38,11 +39,13 @@ brew 'asdf'
 brew 'awscli'
 brew 'black'
 brew 'btop'
+brew 'charmbracelet/tap/soft-serve'
 brew 'cheat'            # Command-line cheat sheets
 brew 'cmake'
 brew 'coreutils'        # GNU utilities for Unix-like operating systems
 brew 'duckdb'
 brew 'ffmpeg'
+brew 'fmt'              # Simplifying and optimizing text files
 brew 'fnm'              # Node version manager
 brew 'gh'
 brew 'git-chglog/git-chglog/git-chglog'
@@ -82,6 +85,7 @@ brew 'spaceman-diff'    # Display images in Git diffs
 brew 'sqlfluff'
 brew 'sqruff'
 brew 'sst/tap/opencode'
+brew 'rustup'
 brew 'gromgit/brewtils/taproom'
 brew 'tmux'             # Enhanced terminal multiplexer
 brew 'trash'            # Command for moving files to the Trash on OS X

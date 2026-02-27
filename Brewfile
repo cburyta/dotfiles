@@ -65,6 +65,7 @@ brew 'llmfit'
 brew 'marcus/tap/sidecar' # Agentic workflow optics
 brew 'marcus/tap/td'      # Agentic task tracking (sidecar)
 brew 'minio'
+brew 'make'
 brew 'minio-mc'
 brew 'neovim'
 brew 'nilukush/ytt/youtube-transcript-tools'

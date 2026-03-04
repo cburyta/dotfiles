@@ -99,6 +99,7 @@ brew 'uv'
 brew 'vhs'              # Terminal demos https://github.com/charmbracelet/vhs
 brew 'watch'
 brew 'wget'             # Network utility for downloading files from the web
+brew 'worktrunk'        # CLI for Git worktree management
 brew 'yamllint'
 brew 'yt-dlp'
 

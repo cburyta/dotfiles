@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Convert GIF to MP4 using ffmpeg
+# Usage: gif2mp4 input.gif [output.mp4]
+
+set -e
+
+if [ -z "$1" ]; then
+  echo "Usage: gif2mp4 <input.gif> [output.mp4]"
+  exit 1
+fi
+
+input="$1"
+output="${2:-${1%.gif}.mp4}"
+
+ffmpeg -i "$input" -movflags faststart -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" "$output"

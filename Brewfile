@@ -22,6 +22,7 @@ tap 'sst/tap'               # opencode
 tap 'marcus/tap'
 tap 'AlexsJones/llmfit'     # llmfit
 tap 'charmbracelet/tap'     # tui based git repo host
+tap 'specstoryai/tap'
 
 # Fonts
 cask 'font-jetbrains-mono-nerd-font'
@@ -51,6 +52,7 @@ brew 'gh'
 brew 'git-chglog/git-chglog/git-chglog'
 brew 'go'
 brew 'go-parquet-tools'
+brew 'gnupg'
 brew 'grc'              # Generic colorizer
 brew 'groovy'           # Groovy programming language support
 brew 'helm'
@@ -64,6 +66,7 @@ brew 'librist'
 brew 'llmfit'
 brew 'marcus/tap/sidecar' # Agentic workflow optics
 brew 'marcus/tap/td'      # Agentic task tracking (sidecar)
+brew 'marp-cli'           # Markdown to HTML/PDF/PPT slides
 brew 'minio'
 brew 'make'
 brew 'minio-mc'
@@ -82,6 +85,7 @@ brew 'qmk/qmk/qmk'
 brew 'reattach-to-user-namespace'  # Fix OS X issue with tmux exiting after startup
 brew 'saml2aws'         # AWS CLI from SAML, useful for accessing AWS resources via SAML
 brew 'skaffold'
+brew 'specstoryai/tap/specstory' # wrap agent CLI to save prompts
 brew 'spaceman-diff'    # Display images in Git diffs
 brew 'sqlfluff'
 brew 'sqruff'
@@ -92,6 +96,7 @@ brew 'tmux'             # Enhanced terminal multiplexer
 brew 'trash'            # Command for moving files to the Trash on OS X
 brew 'tree'
 brew 'uv'
+brew 'vhs'              # Terminal demos https://github.com/charmbracelet/vhs
 brew 'watch'
 brew 'wget'             # Network utility for downloading files from the web
 brew 'yamllint'

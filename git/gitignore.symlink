@@ -16,6 +16,7 @@
 # agents
 # AGENTS.md
 # .cursor
+.cursorindexingignore
 .junie
 opencode.json
 .opencode
@@ -30,5 +31,6 @@ node_modules
 # OLKA internal files (but NOT worktrees!)
 .olka/orchestrator/
 
+.specstory
 .worktrees
 memory/

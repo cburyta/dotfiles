@@ -23,6 +23,7 @@ tap 'marcus/tap'
 tap 'AlexsJones/llmfit'     # llmfit
 tap 'charmbracelet/tap'     # tui based git repo host
 tap 'specstoryai/tap'
+tap 'scrypster/tap'
 
 # Fonts
 cask 'font-jetbrains-mono-nerd-font'
@@ -85,6 +86,7 @@ brew 'qmk/qmk/qmk'
 brew 'reattach-to-user-namespace'  # Fix OS X issue with tmux exiting after startup
 brew 'saml2aws'         # AWS CLI from SAML, useful for accessing AWS resources via SAML
 brew 'skaffold'
+brew 'scrypster/tap/muninn' # active memory databsae
 brew 'specstoryai/tap/specstory' # wrap agent CLI to save prompts
 brew 'spaceman-diff'    # Display images in Git diffs
 brew 'sqlfluff'
@@ -102,6 +104,7 @@ brew 'wget'             # Network utility for downloading files from the web
 brew 'worktrunk'        # CLI for Git worktree management
 brew 'yamllint'
 brew 'yt-dlp'
+brew 'yq'               # YAML, JSON, INI and XML processor
 
 # Casks (Graphical User Interfaces)
 # cask 'miniconda'        # Python environment management

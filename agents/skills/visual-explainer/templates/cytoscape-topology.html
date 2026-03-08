@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Topology — Reference Template</title>
+<!--
+  Reference template for the visual-explainer skill: Cytoscape.js topology diagrams.
+  Use this instead of Mermaid for system architecture maps and network graphs.
+
+  Why Cytoscape over Mermaid for topology:
+  - Native pan/zoom (scroll to cursor, drag to pan) — no CSS transform hacks
+  - Nodes size to label content — no tiny unreadable text at default zoom
+  - Reliable dagre layout with compound (parent/child) node support
+  - Click events for detail panels or highlighting
+
+  Key patterns demonstrated:
+  - Three-script CDN setup (cytoscape + dagre + cytoscape-dagre)
+  - wheelSensitivity: 0.3 (default 1 is too fast)
+  - 'width': 'label' / 'height': 'label' + padding for content-sized nodes
+  - Type-based node coloring via data(type) selectors
+  - Dashed edge support via data(dashed) boolean
+  - Zoom button controls + scroll hint
+  - Color legend
+  - Dark-first palette (tweak :root for light themes)
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ============ THEME ============ */
+  :root {
+    --font-body: 'Sora', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+
+    --bg:        #0d0f14;
+    --surface:   #13151c;
+    --surface2:  #1b1e28;
+    --border:    rgba(255,255,255,0.06);
+    --border-hi: rgba(255,255,255,0.13);
+    --text:      #dde1ee;
+    --text-dim:  #6b7090;
+
+    --a:     #60a5fa; --a-dim: rgba(96,165,250,0.12);
+    --b:     #34d399; --b-dim: rgba(52,211,153,0.11);
+    --c:     #f59e0b; --c-dim: rgba(245,158,11,0.12);
+    --d:     #a78bfa; --d-dim: rgba(167,139,250,0.11);
+    --e:     #f87171; --e-dim: rgba(248,113,113,0.10);
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg:        #f4f5f9;
+      --surface:   #ffffff;
+      --surface2:  #eef0f6;
+      --border:    rgba(0,0,0,0.07);
+      --border-hi: rgba(0,0,0,0.14);
+      --text:      #1a1d2e;
+      --text-dim:  #6b7090;
+    }
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+    background-size: 24px 24px;
+    color: var(--text);
+    font-family: var(--font-body);
+    padding: 40px;
+    min-height: 100vh;
+  }
+
+  @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+  .anim { animation: fadeUp .4s ease-out both; animation-delay: calc(var(--i,0)*.07s); }
+  @media (prefers-reduced-motion: reduce) { .anim { animation: none; } }
+
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  h1 {
+    font-size: 32px; font-weight: 700; letter-spacing: -0.5px;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    font-family: var(--font-mono); font-size: 12px; color: var(--text-dim);
+    margin-bottom: 32px;
+  }
+
+  /* ── Cytoscape container ── */
+  .cy-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 24px;
+  }
+
+  #cy { width: 100%; height: 540px; }
+
+  .cy-controls {
+    position: absolute; top: 10px; right: 10px;
+    display: flex; flex-direction: column; gap: 2px; z-index: 10;
+    background: var(--surface2); border: 1px solid var(--border-hi);
+    border-radius: 6px; padding: 2px;
+  }
+  .cy-controls button {
+    width: 28px; height: 28px; border: none; background: transparent;
+    color: var(--text-dim); font-family: var(--font-mono); font-size: 14px;
+    cursor: pointer; border-radius: 4px; display: flex; align-items: center;
+    justify-content: center; transition: background .15s, color .15s;
+  }
+  .cy-controls button:hover { background: var(--border-hi); color: var(--text); }
+
+  .cy-hint {
+    position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+    font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);
+    background: color-mix(in srgb, var(--bg) 85%, transparent);
+    padding: 4px 14px; border-radius: 20px; pointer-events: none; white-space: nowrap;
+  }
+
+  /* ── Legend ── */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 16px; padding: 14px 20px;
+    border-top: 1px solid var(--border);
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);
+  }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+  /* ── Callout ── */
+  .callout {
+    background: var(--surface); border: 1px solid var(--border);
+    border-left: 3px solid var(--a); border-radius: 0 10px 10px 0;
+    padding: 14px 20px; font-size: 13px; line-height: 1.65; color: var(--text-dim);
+    margin-top: 8px;
+  }
+  .callout strong { color: var(--text); }
+  .callout code {
+    font-family: var(--font-mono); font-size: 11px;
+    background: var(--a-dim); color: var(--a); padding: 1px 5px; border-radius: 3px;
+  }
+
+  @media (max-width: 768px) {
+    body { padding: 16px; }
+    h1 { font-size: 22px; }
+    #cy { height: 380px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1 class="anim" style="--i:0">System Topology</h1>
+  <p class="subtitle anim" style="--i:1">reference template · cytoscape.js + dagre · scroll to zoom · drag to pan</p>
+
+  <div class="cy-wrap anim" style="--i:2">
+    <div id="cy"></div>
+    <div class="cy-controls">
+      <button onclick="cy.zoom(cy.zoom()*1.25); cy.center()" title="Zoom in">+</button>
+      <button onclick="cy.zoom(cy.zoom()*0.8);  cy.center()" title="Zoom out">&minus;</button>
+      <button onclick="cy.fit(undefined, 40)" title="Fit to screen">&#8634;</button>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--a)"></div> Frontend / Client</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--b)"></div> Backend / Service</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--c)"></div> Storage / Data</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--d)"></div> External / Third-party</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--e)"></div> Actor / Human</div>
+    </div>
+    <div class="cy-hint">scroll to zoom &nbsp;·&nbsp; drag to pan &nbsp;·&nbsp; click node for detail</div>
+  </div>
+
+  <div class="callout anim" style="--i:3">
+    <strong>Cytoscape.js template.</strong> Swap out the <code>elements</code> array with your nodes and edges.
+    Set <code>data.type</code> on each node to apply color grouping (<code>frontend</code>, <code>backend</code>,
+    <code>storage</code>, <code>external</code>, <code>actor</code>). Add <code>data.dashed: true</code> to any
+    edge for a dashed line. Adjust <code>rankDir</code> to <code>'LR'</code> (left-right) or <code>'TD'</code>
+    (top-down) based on your flow direction. <code>wheelSensitivity: 0.3</code> keeps scroll zoom comfortable —
+    never remove it.
+  </div>
+
+</div>
+
+<!-- THREE SCRIPTS REQUIRED — load in this order -->
+<script src="https://cdn.jsdelivr.net/npm/cytoscape@3.29.2/dist/cytoscape.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
+<script>
+cytoscape.use(cytoscapeDagre);
+
+/* ── Shared style helpers ── */
+function nodeColor(border, bg, text) {
+  return { 'border-color': border, 'background-color': bg, 'color': text, 'text-outline-color': bg };
+}
+
+const SHARED_NODE = {
+  shape: 'roundrectangle',
+  width: 'label',           // sizes to content — ALWAYS use this
+  height: 'label',
+  padding: '14px',
+  'border-width': 1.5,
+  'text-outline-width': 2,
+  'font-family': "'Sora', system-ui, sans-serif",
+  'font-size': '13px',
+  'font-weight': '500',
+  'text-wrap': 'wrap',
+  'text-max-width': '150px',
+  'text-valign': 'center',
+  'text-halign': 'center',
+  'label': 'data(label)',
+  'min-width': '100px',
+  'min-height': '44px',
+};
+
+const SHARED_EDGE = {
+  'curve-style': 'bezier',
+  'target-arrow-shape': 'triangle',
+  'arrow-scale': 1.1,
+  'line-color': '#2e3148',
+  'target-arrow-color': '#2e3148',
+  'label': 'data(label)',
+  'font-family': "'IBM Plex Mono', monospace",
+  'font-size': '11px',
+  'color': '#5a5e80',
+  'text-background-color': '#0d0f14',
+  'text-background-opacity': 0.85,
+  'text-background-padding': '3px',
+  'text-background-shape': 'roundrectangle',
+  'width': 1.5,
+};
+
+/* ── Replace these elements with your real system ── */
+const elements = [
+  // Nodes — set type to: 'frontend' | 'backend' | 'storage' | 'external' | 'actor'
+  { data: { id: 'user',    label: 'End User',             type: 'actor'    } },
+  { data: { id: 'browser', label: 'Browser\nReact SPA',   type: 'frontend' } },
+  { data: { id: 'cdn',     label: 'CDN\nCloudFront',      type: 'external' } },
+  { data: { id: 'gateway', label: 'API Gateway\n:443',    type: 'backend'  } },
+  { data: { id: 'auth',    label: 'Auth Service\nJWT',    type: 'backend'  } },
+  { data: { id: 'api',     label: 'App Service\nFastAPI', type: 'backend'  } },
+  { data: { id: 'db',      label: 'PostgreSQL\nprimary',  type: 'storage'  } },
+  { data: { id: 'cache',   label: 'Redis\ncache layer',   type: 'storage'  } },
+  { data: { id: 'queue',   label: 'Message Queue\nSQS',   type: 'external' } },
+  { data: { id: 'worker',  label: 'Worker\nasync jobs',   type: 'backend'  } },
+  { data: { id: 'store',   label: 'Object Store\nS3',     type: 'storage'  } },
+
+  // Edges — add label: '' for unlabeled, dashed: true for dashed style
+  { data: { source: 'user',    target: 'browser',  label: ''            } },
+  { data: { source: 'browser', target: 'cdn',      label: 'static'      } },
+  { data: { source: 'browser', target: 'gateway',  label: 'HTTPS'       } },
+  { data: { source: 'gateway', target: 'auth',     label: 'verify JWT'  } },
+  { data: { source: 'gateway', target: 'api',      label: ''            } },
+  { data: { source: 'api',     target: 'db',       label: 'SQL'         } },
+  { data: { source: 'api',     target: 'cache',    label: 'GET/SET'     } },
+  { data: { source: 'api',     target: 'queue',    label: 'publish',    dashed: true } },
+  { data: { source: 'queue',   target: 'worker',   label: 'consume'     } },
+  { data: { source: 'worker',  target: 'store',    label: 'upload'      } },
+  { data: { source: 'worker',  target: 'db',       label: 'write',      dashed: true } },
+];
+
+/* ── Initialize ── */
+const cy = cytoscape({
+  container: document.getElementById('cy'),
+  minZoom: 0.2,
+  maxZoom: 3,
+  wheelSensitivity: 0.3,   // NEVER set above 0.5 — default 1.0 is too aggressive
+  elements,
+
+  style: [
+    // Base node — fallback if type doesn't match
+    { selector: 'node',                   style: { ...SHARED_NODE, 'background-color': '#1c1c28', 'border-color': '#44445a', 'color': '#b0b0cc', 'text-outline-color': '#1c1c28' } },
+    // Type overrides
+    { selector: 'node[type="actor"]',     style: nodeColor('#f87171', '#1e0e0e', '#fca5a5') },
+    { selector: 'node[type="frontend"]',  style: nodeColor('#60a5fa', '#0e1420', '#93c5fd') },
+    { selector: 'node[type="backend"]',   style: nodeColor('#34d399', '#0a1810', '#6ee7b7') },
+    { selector: 'node[type="storage"]',   style: nodeColor('#f59e0b', '#1a1408', '#fcd34d') },
+    { selector: 'node[type="external"]',  style: nodeColor('#a78bfa', '#14101e', '#c4b5fd') },
+    // Interaction
+    { selector: 'node:selected',          style: { 'border-width': 2.5, 'border-color': '#ffffff', 'border-opacity': 0.4 } },
+    { selector: 'node:active',            style: { 'overlay-opacity': 0.08 } },
+    // Edges
+    { selector: 'edge',                   style: { ...SHARED_EDGE } },
+    { selector: 'edge[?dashed]',          style: { 'line-style': 'dashed', 'line-dash-pattern': [6, 4] } },
+    { selector: 'edge:selected',          style: { 'line-color': '#ffffff', 'target-arrow-color': '#ffffff', 'opacity': 0.6 } },
+  ],
+
+  layout: {
+    name: 'dagre',
+    rankDir: 'LR',    // 'LR' left-to-right | 'TD' top-down | 'RL' | 'BT'
+    nodeSep: 55,      // vertical spacing between nodes in same rank
+    rankSep: 90,      // horizontal spacing between ranks
+    edgeSep: 10,
+    padding: 40,
+    animate: false,
+  },
+});
+
+// Optional: click node to highlight its connections
+cy.on('tap', 'node', function(e) {
+  const node = e.target;
+  cy.elements().removeClass('faded');
+  const connected = node.closedNeighborhood();
+  cy.elements().not(connected).addClass('faded');
+});
+cy.on('tap', function(e) {
+  if (e.target === cy) cy.elements().removeClass('faded');
+});
+</script>
+<style>
+/* Fade-out for non-selected elements on click */
+.faded { opacity: 0.15; transition: opacity 0.2s; }
+</style>
+</body>
+</html>

@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires a browser to view generated HTML files. Optional surf-cli for AI image generation.
 metadata:
   author: nicobailon
-  version: "0.1.1"
+  version: "0.1.1-patch"
 ---
 
 # Visual Explainer
@@ -53,8 +53,10 @@ Vary the choice each time. If the last diagram was dark and technical, make the 
 | Diagram type | Approach | Why |
 |---|---|---|
 | Architecture (text-heavy) | CSS Grid cards + flow arrows | Rich card content (descriptions, code, tool lists) needs CSS control |
-| Architecture (topology-focused) | **Mermaid** | Visible connections between components need automatic edge routing |
-| Flowchart / pipeline | **Mermaid** | Automatic node positioning and edge routing; hand-drawn mode available |
+| Architecture (topology-focused) | **Cytoscape.js** | Native, reliable pan/zoom; correct node sizing; dagre layout. Mermaid zoom is broken for complex graphs |
+| Network / system map (5+ nodes) | **Cytoscape.js** | Same reasons — use for any diagram where interaction (zoom, pan, click) matters |
+| Flowchart / pipeline (simple, <15 nodes) | **Mermaid** | Automatic layout; hand-drawn mode; good for linear flows in static contexts |
+| Flowchart / pipeline (complex or interactive) | **Cytoscape.js** | Better zoom, readable labels, reliable dagre layout |
 | Sequence diagram | **Mermaid** | Lifelines, messages, and activation boxes need automatic layout |
 | Data flow | **Mermaid** with edge labels | Connections and data descriptions need automatic edge routing |
 | ER / schema diagram | **Mermaid** | Relationship lines between many entities need auto-routing |
@@ -63,6 +65,8 @@ Vary the choice each time. If the last diagram was dark and technical, make the 
 | Data table | HTML `<table>` | Semantic markup, accessibility, copy-paste behavior |
 | Timeline | CSS (central line + cards) | Simple linear layout doesn't need a layout engine |
 | Dashboard | CSS Grid + Chart.js | Card grid with embedded charts |
+
+**Cytoscape.js (preferred for topology/network diagrams):** Use Cytoscape.js + dagre for any system architecture diagram or network graph. It provides native, battle-tested pan/zoom (scroll to zoom toward cursor, drag to pan), proper node sizing from content, and reliable edge routing. Read `./templates/cytoscape-topology.html` for the boilerplate and `./references/libraries.md` for CDN imports and style patterns. Key config: `wheelSensitivity: 0.3` to prevent hair-trigger zoom; `rankDir: 'LR'` for left-to-right system flows; `'width': 'label', 'height': 'label', 'padding': '14px'` so nodes size to their content.
 
 **Mermaid theming:** Always use `theme: 'base'` with custom `themeVariables` so colors match your page palette. Use `look: 'handDrawn'` for sketch aesthetic or `look: 'classic'` for clean lines. Use `layout: 'elk'` for complex graphs (requires the `@mermaid-js/layout-elk` package — see `./references/libraries.md` for the CDN import). Override Mermaid's SVG classes with CSS for pixel-perfect control. See `./references/libraries.md` for full theming guide.
 

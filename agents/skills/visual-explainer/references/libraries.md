@@ -2,6 +2,163 @@
 
 Optional CDN libraries for cases where pure CSS/HTML isn't enough. Only include what the diagram actually needs — most diagrams need zero external JS.
 
+## Cytoscape.js — Network / Topology Diagrams (PREFERRED over Mermaid for system maps)
+
+Use for system architecture diagrams, network maps, and any graph where pan/zoom and readable node labels matter. Cytoscape provides native, reliable pan/zoom (scroll to zoom toward cursor, drag to pan) with no CSS `transform` hacks. Mermaid's zoom is broken for complex interactive graphs — use Cytoscape instead.
+
+**When to use Cytoscape over Mermaid:**
+- Any diagram with 5+ nodes that a user needs to explore interactively
+- System topology / architecture maps (the primary use case)
+- When node labels must be readable at default zoom without scrolling
+- When you need compound nodes (subgraph grouping)
+- When clicking nodes should reveal detail
+
+**CDN (three scripts — all required):**
+```html
+<script src="https://cdn.jsdelivr.net/npm/cytoscape@3.29.2/dist/cytoscape.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
+```
+
+**Registration (before first `cytoscape({...})` call):**
+```javascript
+cytoscape.use(cytoscapeDagre);
+```
+
+**Minimal boilerplate:**
+```javascript
+const cy = cytoscape({
+  container: document.getElementById('cy'),
+  minZoom: 0.2,
+  maxZoom: 3,
+  wheelSensitivity: 0.3,   // IMPORTANT: default is 1 (too fast), 0.3 is comfortable
+
+  elements: [
+    // Nodes
+    { data: { id: 'a', label: 'Service A', type: 'backend' } },
+    { data: { id: 'b', label: 'Service B', type: 'frontend' } },
+    // Edges
+    { data: { source: 'a', target: 'b', label: 'HTTP' } },
+  ],
+
+  style: [
+    {
+      selector: 'node',
+      style: {
+        'shape': 'roundrectangle',
+        'width': 'label',         // size to content
+        'height': 'label',
+        'padding': '14px',
+        'background-color': '#1c1c28',
+        'border-color': '#44445a',
+        'border-width': 1.5,
+        'color': '#e2e2e8',
+        'text-outline-color': '#1c1c28',
+        'text-outline-width': 2,
+        'font-family': "'Space Grotesk', system-ui, sans-serif",
+        'font-size': '13px',
+        'font-weight': '500',
+        'text-wrap': 'wrap',
+        'text-max-width': '140px',
+        'text-valign': 'center',
+        'text-halign': 'center',
+        'label': 'data(label)',
+        'min-width': '100px',
+        'min-height': '44px',
+      }
+    },
+    {
+      selector: 'edge',
+      style: {
+        'curve-style': 'bezier',
+        'target-arrow-shape': 'triangle',
+        'arrow-scale': 1.1,
+        'line-color': '#363648',
+        'target-arrow-color': '#363648',
+        'label': 'data(label)',
+        'font-family': "'JetBrains Mono', monospace",
+        'font-size': '11px',
+        'color': '#6868a0',
+        'text-background-color': '#0c0c0e',
+        'text-background-opacity': 0.85,
+        'text-background-padding': '3px',
+        'text-background-shape': 'roundrectangle',
+        'width': 1.5,
+      }
+    },
+    // Type-specific node colors — use 'data(type)' selector
+    { selector: 'node[type="backend"]',  style: { 'border-color': '#f59e0b', 'background-color': '#1a1408', 'color': '#fbbf24' } },
+    { selector: 'node[type="frontend"]', style: { 'border-color': '#60a5fa', 'background-color': '#0e1420', 'color': '#93c5fd' } },
+    { selector: 'node[type="external"]', style: { 'border-color': '#a78bfa', 'background-color': '#14101e', 'color': '#c4b5fd' } },
+    { selector: 'node[type="storage"]',  style: { 'border-color': '#34d399', 'background-color': '#0a1810', 'color': '#6ee7b7' } },
+    // Dashed edges
+    { selector: 'edge[?dashed]', style: { 'line-style': 'dashed', 'line-dash-pattern': [6, 4] } },
+    // Selection highlight
+    { selector: 'node:selected', style: { 'border-width': 2.5, 'border-color': '#ffffff', 'border-opacity': 0.5 } },
+  ],
+
+  layout: {
+    name: 'dagre',
+    rankDir: 'LR',    // 'LR' for left-to-right, 'TD' for top-down
+    nodeSep: 55,      // vertical gap between nodes in same rank
+    rankSep: 90,      // horizontal gap between ranks
+    padding: 40,
+    animate: false,
+  },
+});
+```
+
+**Container CSS:**
+```css
+.cy-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 32px;
+}
+
+#cy { width: 100%; height: 520px; }
+
+/* Optional zoom buttons */
+.cy-controls {
+  position: absolute; top: 10px; right: 10px;
+  display: flex; flex-direction: column; gap: 2px; z-index: 10;
+  background: var(--surface2); border: 1px solid var(--border-hi);
+  border-radius: 6px; padding: 2px;
+}
+.cy-controls button {
+  width: 28px; height: 28px; border: none; background: transparent;
+  color: var(--text-dim); font-size: 14px; cursor: pointer; border-radius: 4px;
+}
+.cy-controls button:hover { background: var(--border-hi); color: var(--text); }
+
+.cy-hint {
+  position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+  font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);
+  background: rgba(12,12,14,.8); padding: 4px 12px; border-radius: 20px;
+  pointer-events: none; white-space: nowrap;
+}
+```
+
+**HTML:**
+```html
+<div class="cy-wrap">
+  <div id="cy"></div>
+  <div class="cy-controls">
+    <button onclick="cy.zoom(cy.zoom()*1.25); cy.center()" title="Zoom in">+</button>
+    <button onclick="cy.zoom(cy.zoom()*0.8);  cy.center()" title="Zoom out">&minus;</button>
+    <button onclick="cy.fit(undefined, 40)" title="Fit">&#8634;</button>
+  </div>
+  <div class="cy-hint">scroll to zoom · drag to pan</div>
+</div>
+```
+
+**Read the full working template:** `./templates/cytoscape-topology.html`
+
+---
+
 ## Mermaid.js — Diagramming Engine
 
 Use for flowcharts, sequence diagrams, ER diagrams, state machines, mind maps, class diagrams, and any diagram where automatic node positioning and edge routing saves effort. Mermaid handles layout — you handle theming.

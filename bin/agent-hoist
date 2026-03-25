@@ -7,6 +7,7 @@
 # or a specific one with --dest.
 #
 # Usage:
+#   agent-hoist                             # audit: list hoistable entities
 #   agent-hoist skill   ~/.claude/skills/my-skill
 #   agent-hoist command ~/.config/opencode/command/my-command.md
 #   agent-hoist skill   ~/.claude/skills/my-skill --dest ~/Repos/work/agents
@@ -16,10 +17,12 @@ set -e
 AGENT_PATH="${AGENT_PATH:-$HOME/.dotfiles/agents}"
 
 usage() {
-  echo "Usage: agent-hoist <type> <source-path> [--dest <agents-dir>]"
+  echo "Usage: agent-hoist [<type> <source-path> [--dest <agents-dir>]]"
   echo ""
-  echo "Promotes agent config from a tool-specific location into"
-  echo "a central agents/ directory and re-syncs to all tools."
+  echo "With no arguments: scan tool directories and list entities that can be hoisted."
+  echo ""
+  echo "With arguments: promote agent config from a tool-specific location into"
+  echo "a central agents/ directory and re-sync to all tools."
   echo ""
   echo "Destination defaults to the first entry in AGENT_PATH."
   echo "Current AGENT_PATH: $AGENT_PATH"
@@ -29,11 +32,97 @@ usage() {
   echo "  command   A command file (.md)"
   echo ""
   echo "Examples:"
+  echo "  agent-hoist                                    # list what can be hoisted"
   echo "  agent-hoist skill   ~/.claude/skills/my-skill"
   echo "  agent-hoist command ~/.config/opencode/command/my-command.md"
   echo "  agent-hoist skill   ~/.claude/skills/my-skill --dest ~/Repos/work/agents"
   exit 1
 }
+
+# Returns 0 (true) if the given path is a symlink pointing into AGENT_PATH
+is_managed() {
+  local path="$1"
+  [ -L "$path" ] || return 1
+  local target
+  target=$(readlink "$path")
+  # Resolve relative symlink to absolute
+  case "$target" in
+    /*) ;;  # already absolute
+    *)  target="$(cd "$(dirname "$path")" && cd "$target" 2>/dev/null && pwd || echo "$target")" ;;
+  esac
+  local dir
+  IFS=':'
+  for dir in $AGENT_PATH; do
+    case "$target" in
+      "$dir"*) unset IFS; return 0 ;;
+    esac
+  done
+  unset IFS
+  return 1
+}
+
+audit_hoistable() {
+  SKILL_DIRS="$HOME/.claude/skills $HOME/.cursor/skills $HOME/.config/opencode/skills"
+  COMMAND_DIRS="$HOME/.cursor/commands $HOME/.config/opencode/command $HOME/.claude/commands"
+
+  found=0
+  seen=""
+
+  echo "Scanning for unmanaged entities..."
+  echo ""
+
+  for dir in $SKILL_DIRS; do
+    [ -d "$dir" ] || continue
+    for item in "$dir"/*/; do
+      [ -d "$item" ] || continue
+      item="${item%/}"  # strip trailing slash so readlink/-L work correctly
+      is_managed "$item" && continue
+      name=$(basename "$item")
+      case " $seen " in
+        *" skill:$name "*) continue ;;
+      esac
+      seen="$seen skill:$name"
+      if [ ! -f "$item/SKILL.md" ]; then
+        warn=" (no SKILL.md)"
+      else
+        warn=""
+      fi
+      printf "  skill    %-30s  %s%s\n" "$name" "$item" "$warn"
+      printf "           agent-hoist skill %s\n" "$item"
+      echo ""
+      found=$((found + 1))
+    done
+  done
+
+  for dir in $COMMAND_DIRS; do
+    [ -d "$dir" ] || continue
+    for item in "$dir"/*.md; do
+      [ -f "$item" ] || continue
+      is_managed "$item" && continue
+      name=$(basename "$item")
+      case " $seen " in
+        *" command:$name "*) continue ;;
+      esac
+      seen="$seen command:$name"
+      printf "  command  %-30s  %s\n" "$name" "$item"
+      printf "           agent-hoist command %s\n" "$item"
+      echo ""
+      found=$((found + 1))
+    done
+  done
+
+  if [ "$found" -eq 0 ]; then
+    echo "Nothing to hoist — all entities in tool directories are already managed."
+  else
+    echo "$found entity(ies) can be hoisted."
+    echo "Run the commands above, or pass a path directly: agent-hoist <type> <path>"
+  fi
+}
+
+if [ $# -eq 0 ]; then
+  audit_hoistable
+  exit 0
+fi
 
 if [ $# -lt 2 ]; then
   usage
@@ -91,18 +180,9 @@ if [ -e "$DEST" ]; then
 fi
 
 # If the source is already a symlink managed by agent-sync, nothing to do
-if [ -L "$SOURCE" ]; then
-  link_target=$(readlink "$SOURCE")
-  IFS=':'
-  for dir in $AGENT_PATH; do
-    case "$link_target" in
-      "$dir"*)
-        echo "$SOURCE is already managed by agent-sync (-> $link_target). Nothing to hoist."
-        exit 0
-        ;;
-    esac
-  done
-  unset IFS
+if is_managed "$SOURCE"; then
+  echo "$SOURCE is already managed by agent-sync. Nothing to hoist."
+  exit 0
 fi
 
 echo "Hoisting $TYPE '$NAME' into $DEST_DIR/"

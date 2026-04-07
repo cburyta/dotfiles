@@ -112,3 +112,4 @@ zstyle ':completion:*' menu select
 # eval "$(~/.local/bin/cursor-agent shell-integration zsh)"
 
 if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)"; fi
+NVIM_DIR=/opt/homebrew/Cellar/neovim/0.11.7

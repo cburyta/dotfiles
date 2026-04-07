@@ -6,9 +6,9 @@ set -x
 APP_SOURCE='/Applications/Cursor.app'
 
 # unique name for your alt install
-APP_NAME='Cursor Alt' # can have spaces
-APP_SETTINGS_NAME='CursorAlt' # should not hvae spaces
-APP_ID="com.cursor.alt" # lowercase ideally
+APP_NAME=${APP_NAME:-'Cursor Alt'} # can have spaces
+APP_SETTINGS_NAME=${APP_SETTINGS_NAME:-'CursorAlt'} # should not hvae spaces
+APP_ID=${APP_ID:-"com.cursor.alt"} # lowercase ideally
 
 APP_PATH="$HOME/Applications/$APP_NAME.app"
 APP_SETTINGS_PATH="$HOME/Library/Application Support/$APP_SETTINGS_NAME"

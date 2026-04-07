@@ -25,13 +25,18 @@ tap 'charmbracelet/tap'     # tui based git repo host
 tap 'specstoryai/tap'
 tap 'scrypster/tap'
 
+tap 'gitea/tap', 'https://gitea.com/gitea/homebrew-gitea'
+brew 'gitea/tap/tea'
+
 # Fonts
 cask 'font-jetbrains-mono-nerd-font'
 cask 'font-meslo-lg-nerd-font'
 cask 'font-hack-nerd-font'
 
-# Other casks
-cask 'claude-code'
+tap 'manaflow-ai/cmux'      # https://github.com/manaflow-ai/cmux
+cask 'cmux'
+
+cask 'linearmouse'      # Mouse customization utility
 
 # Utilities and Development Tools
 brew 'ack'              # Code search tool
@@ -42,6 +47,7 @@ brew 'awscli'
 brew 'black'
 brew 'btop'
 brew 'charmbracelet/tap/soft-serve'
+brew 'charmbracelet/tap/crush'
 brew 'cheat'            # Command-line cheat sheets
 brew 'cmake'
 brew 'coreutils'        # GNU utilities for Unix-like operating systems
@@ -71,7 +77,8 @@ brew 'marp-cli'           # Markdown to HTML/PDF/PPT slides
 brew 'minio'
 brew 'make'
 brew 'minio-mc'
-brew 'neovim'
+brew 'dnsmasq'
+# neovim - installed via neovim/install.sh (pinned to 0.11.7)
 brew 'nilukush/ytt/youtube-transcript-tools'
 brew 'openconnect'
 brew 'openvino'
@@ -103,6 +110,7 @@ brew 'watch'
 brew 'wget'             # Network utility for downloading files from the web
 brew 'worktrunk'        # CLI for Git worktree management
 brew 'yamllint'
+brew 'yazi'             # TUI File Browser
 brew 'yt-dlp'
 brew 'yq'               # YAML, JSON, INI and XML processor
 

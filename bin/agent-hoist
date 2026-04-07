@@ -198,3 +198,13 @@ echo ""
 echo "Running agent-sync to deploy everywhere..."
 echo ""
 agent-sync
+
+DEST_NAME=$(basename "$DEST")
+
+case "$TYPE" in
+  skill)   agent-enable skill "$DEST_NAME" ;;
+  command) agent-enable command "$DEST_NAME" ;;
+esac
+
+echo ""
+echo "Done. '$DEST_NAME' is now enabled and available."

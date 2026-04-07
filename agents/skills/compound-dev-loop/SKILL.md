@@ -26,7 +26,7 @@ Start with ONE of:
 
 Fork a fresh context to research. Output compressed findings, not raw exploration.
 
-**Output:** `memory/research/<task-slug>.md`
+**Output:** `.memory/research/<task-slug>.md`
 
 Contents:
 - Exact file paths and relevant line numbers
@@ -40,7 +40,7 @@ See `references/research-template.md` for format.
 
 Using research output, create implementation plan with explicit details.
 
-**Output:** `memory/plans/<task-slug>.plan.md`
+**Output:** `.memory/plans/<task-slug>.plan.md`
 
 Contents:
 - Numbered steps with file:line references

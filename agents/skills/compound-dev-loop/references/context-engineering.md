@@ -50,8 +50,8 @@ Good compaction includes:
 ### Frequent Compaction
 
 Build workflow around compaction:
-- Research phase outputs `memory/research/*.md`
-- Plan phase outputs `memory/plans/*.md`
+- Research phase outputs `.memory/research/*.md`
+- Plan phase outputs `.memory/plans/*.md`
 - Each phase starts fresh with previous output
 
 ## Trajectory Management

@@ -9,7 +9,7 @@
 Brief description of what will be implemented and why.
 
 ## Prerequisites
-- [ ] Research document reviewed: `memory/research/<task>.md`
+- [ ] Research document reviewed: `.memory/research/<task>.md`
 - [ ] Dependencies identified: none / list them
 
 ## Steps

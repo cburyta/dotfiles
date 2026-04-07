@@ -77,7 +77,6 @@ brew 'marp-cli'           # Markdown to HTML/PDF/PPT slides
 brew 'minio'
 brew 'make'
 brew 'minio-mc'
-brew 'dnsmasq'
 # neovim - installed via neovim/install.sh (pinned to 0.11.7)
 brew 'nilukush/ytt/youtube-transcript-tools'
 brew 'openconnect'

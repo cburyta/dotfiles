@@ -1,0 +1,284 @@
+#!/usr/bin/env -S uv run --with claude-code-plugins-sdk --script
+#
+# agent-enable -- enable marketplace plugins/components
+#
+# Usage:
+#   agent-enable <plugin-name>@<marketplace>   # Enable specific component
+#   agent-enable <marketplace>                 # Enable ALL components from marketplace
+#   agent-enable --list                         # Show available components
+#   agent-enable --help                         # Show help
+#
+# Examples:
+#   agent-enable git@cblecker-claude-plugins
+#   agent-enable cblecker-claude-plugins
+#   agent-enable --list
+
+import os
+import sys
+from pathlib import Path
+
+AGENTS_DIR = Path(os.environ.get('AGENTS_DIR', Path.home() / '.dotfiles' / 'agents'))
+PLUGINS_AVAILABLE = AGENTS_DIR / 'marketplace' / 'plugins-available'
+SKILLS_ENABLED = AGENTS_DIR / 'marketplace' / 'skills-enabled'
+COMMANDS_ENABLED = AGENTS_DIR / 'marketplace' / 'commands-enabled'
+AGENTS_ENABLED = AGENTS_DIR / 'marketplace' / 'agents-enabled'
+HOOKS_ENABLED = AGENTS_DIR / 'marketplace' / 'hooks-enabled'
+MCP_ENABLED = AGENTS_DIR / 'marketplace' / 'mcp-enabled'
+
+ENABLED_DIRS = {
+    'skills': SKILLS_ENABLED,
+    'commands': COMMANDS_ENABLED,
+    'agents': AGENTS_ENABLED,
+    'hooks': HOOKS_ENABLED,
+    'mcp': MCP_ENABLED,
+}
+
+def ensure_dirs():
+    for d in ENABLED_DIRS.values():
+        d.mkdir(parents=True, exist_ok=True)
+
+def list_components(plugin_path: Path) -> dict:
+    components = {'skills': [], 'commands': [], 'agents': [], 'hooks': [], 'mcp': []}
+    
+    if not plugin_path.exists():
+        return components
+    
+    skills_dir = plugin_path / 'skills'
+    if skills_dir.exists():
+        for item in skills_dir.iterdir():
+            if item.is_dir():
+                components['skills'].append(item.name)
+    
+    commands_dir = plugin_path / 'commands'
+    if commands_dir.exists():
+        for item in commands_dir.iterdir():
+            if item.is_file() and item.suffix == '.md':
+                components['commands'].append(item.stem)
+    
+    agents_dir = plugin_path / 'agents'
+    if agents_dir.exists():
+        for item in agents_dir.iterdir():
+            if item.is_file() and item.suffix == '.md':
+                components['agents'].append(item.name)
+    
+    hooks_file = plugin_path / 'hooks' / 'hooks.json'
+    if hooks_file.exists():
+        components['hooks'].append('hooks')
+    
+    mcp_file = plugin_path / '.mcp.json'
+    if mcp_file.exists():
+        components['mcp'].append('mcp')
+    
+    return components
+
+def find_plugin(marketplace: str) -> Path:
+    marketplace_sanitized = marketplace.replace('/', '-')
+    
+    matches = []
+    for plugin_dir in PLUGINS_AVAILABLE.iterdir():
+        if plugin_dir.name == marketplace_sanitized or plugin_dir.name.startswith(f'{marketplace_sanitized}-'):
+            matches.append(plugin_dir)
+    
+    if len(matches) == 0:
+        return None
+    if len(matches) == 1:
+        return matches[0]
+    
+    print(f"Error: Multiple matches for '{marketplace}':", file=sys.stderr)
+    for m in matches:
+        print(f"  - {m.name}", file=sys.stderr)
+    sys.exit(1)
+    
+    print(f"Error: Plugin '{marketplace}' not found in plugins-available", file=sys.stderr)
+    print(f"Run 'agent-list' to see available plugins", file=sys.stderr)
+    sys.exit(1)
+
+def enable_component(component_type: str, component_name: str, marketplace: str, plugin_path: Path):
+    enabled_dir = ENABLED_DIRS.get(component_type)
+    if not enabled_dir:
+        print(f"  [warn] Unknown component type: {component_type}")
+        return False
+    
+    source_path = None
+    
+    if component_type == 'skills':
+        source_path = plugin_path / 'skills' / component_name
+    elif component_type == 'commands':
+        source_path = plugin_path / 'commands' / f'{component_name}.md'
+    elif component_type == 'agents':
+        source_path = plugin_path / 'agents' / f'{component_name}.md'
+    elif component_type == 'hooks':
+        source_path = plugin_path / 'hooks' / 'hooks.json'
+    elif component_type == 'mcp':
+        source_path = plugin_path / '.mcp.json'
+    
+    if not source_path or not source_path.exists():
+        print(f"  [warn] {component_type}/{component_name} not found in {plugin_path.name}")
+        return False
+    
+    link_name = f'{component_name}@{marketplace}'
+    link_path = enabled_dir / link_name
+    
+    if link_path.exists() or link_path.is_symlink():
+        print(f"  [skip] Already enabled: {link_name} ({component_type})")
+        return False
+    
+    try:
+        rel_path = os.path.relpath(source_path, enabled_dir)
+        os.symlink(rel_path, link_path)
+        print(f"  [enabled] {link_name} ({component_type})")
+        return True
+    except OSError as e:
+        print(f"  [error] Failed to create symlink: {e}")
+        return False
+
+def enable_marketplace(marketplace: str):
+    plugin_path = find_plugin(marketplace)
+    
+    if not plugin_path:
+        print(f"Error: Plugin '{marketplace}' not found in plugins-available", file=sys.stderr)
+        print(f"Run 'agent-enable --list' to see available plugins", file=sys.stderr)
+        sys.exit(1)
+    
+    components = list_components(plugin_path)
+    
+    print(f"Enabling components from {plugin_path.name}...")
+    
+    enabled_count = 0
+    
+    for skill in components['skills']:
+        if enable_component('skills', skill, marketplace, plugin_path):
+            enabled_count += 1
+    
+    for cmd in components['commands']:
+        if enable_component('commands', cmd, marketplace, plugin_path):
+            enabled_count += 1
+    
+    for agent in components['agents']:
+        if enable_component('agents', agent, marketplace, plugin_path):
+            enabled_count += 1
+    
+    if components['hooks']:
+        if enable_component('hooks', 'hooks', marketplace, plugin_path):
+            enabled_count += 1
+    
+    if components['mcp']:
+        if enable_component('mcp', 'mcp', marketplace, plugin_path):
+            enabled_count += 1
+    
+    if enabled_count == 0:
+        print("  No components to enable")
+    else:
+        print(f"\nEnabled {enabled_count} component(s)")
+
+def enable_specific(plugin_ref: str):
+    if '@' not in plugin_ref:
+        print(f"Error: Invalid plugin reference. Use format: component@marketplace", file=sys.stderr)
+        print(f"Example: git@cblecker-claude-plugins-git", file=sys.stderr)
+        print(f"\nRun 'agent-enable --list' to see available plugins and components", file=sys.stderr)
+        sys.exit(1)
+    
+    component_name, marketplace = plugin_ref.rsplit('@', 1)
+    plugin_path = find_plugin(marketplace)
+    
+    if not plugin_path:
+        sys.exit(1)
+    
+    component_type = None
+    components = list_components(plugin_path)
+    
+    if component_name in components['skills']:
+        component_type = 'skills'
+    elif component_name in components['commands']:
+        component_type = 'commands'
+    elif component_name in components['agents']:
+        component_type = 'agents'
+    elif component_name == 'hooks':
+        component_type = 'hooks'
+    elif component_name == 'mcp':
+        component_type = 'mcp'
+    
+    if not component_type:
+        print(f"Error: Component '{component_name}' not found in {marketplace}", file=sys.stderr)
+        sys.exit(1)
+    
+    enable_component(component_type, component_name, marketplace, plugin_path)
+
+def list_available():
+    ensure_dirs()
+    
+    print("Available plugins in plugins-available:")
+    print()
+    
+    if not PLUGINS_AVAILABLE.exists():
+        print("  (none)")
+        return
+    
+    for plugin_dir in sorted(PLUGINS_AVAILABLE.iterdir()):
+        if not plugin_dir.is_dir():
+            continue
+        
+        marketplace = plugin_dir.name
+        components = list_components(plugin_dir)
+        
+        total = (len(components['skills']) + len(components['commands']) + 
+                 len(components['agents']) + len(components['hooks']) + 
+                 len(components['mcp']))
+        
+        print(f"  {marketplace}:")
+        
+        if components['skills']:
+            print(f"    skills: {', '.join(components['skills'])}")
+        if components['commands']:
+            print(f"    commands: {', '.join(components['commands'])}")
+        if components['agents']:
+            print(f"    agents: {', '.join(components['agents'])}")
+        if components['hooks']:
+            print(f"    hooks: yes")
+        if components['mcp']:
+            print(f"    mcp: yes")
+        
+        if total == 0:
+            print(f"    (no components)")
+        
+        print()
+
+def list_enabled():
+    print("Enabled components:")
+    print()
+    
+    for comp_type, enabled_dir in sorted(ENABLED_DIRS.items()):
+        if not enabled_dir.exists():
+            continue
+        
+        links = list(enabled_dir.iterdir())
+        if not links:
+            continue
+        
+        print(f"  {comp_type}-enabled:")
+        for link in sorted(links):
+            print(f"    {link.name}")
+        print()
+
+def main():
+    ensure_dirs()
+    
+    if len(sys.argv) < 2 or sys.argv[1] == '--help' or sys.argv[1] == '-h':
+        print(__doc__)
+        sys.exit(0)
+    
+    if sys.argv[1] == '--list':
+        list_available()
+        print()
+        list_enabled()
+        sys.exit(0)
+    
+    arg = sys.argv[1]
+    
+    if '@' in arg:
+        enable_specific(arg)
+    else:
+        enable_marketplace(arg)
+
+if __name__ == '__main__':
+    main()

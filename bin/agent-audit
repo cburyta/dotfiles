@@ -1,0 +1,184 @@
+#!/bin/sh
+#
+# agent-audit -- audit tool-specific skill/command directories
+#
+# Shows which skills/commands exist in Claude, Cursor, and OpenCode dirs,
+# and identifies which are managed by agent-sync vs local (hoistable).
+#
+# Usage:
+#   agent-audit              # show all
+#   agent-audit skills       # skills only
+#   agent-audit commands    # commands only
+
+AGENT_PATH="${AGENT_PATH:-$HOME/.dotfiles/agents}"
+
+CLAUDE_SKILLS="$HOME/.claude/skills"
+CURSOR_SKILLS="$HOME/.cursor/skills"
+OPENCODE_SKILLS="$HOME/.config/opencode/skills"
+
+CURSOR_COMMANDS="$HOME/.cursor/commands"
+OPENCODE_COMMANDS="$HOME/.config/opencode/command"
+
+FILTER="${1:-all}"
+
+is_managed() {
+    local path="$1"
+    [ -L "$path" ] || return 1
+    local target
+    target=$(readlink "$path")
+    case "$target" in
+        /*) ;;
+        *)  target="$(cd "$(dirname "$path")" && cd "$target" 2>/dev/null && pwd || echo "$target")" ;;
+    esac
+    local dir
+    IFS=':'
+    for dir in $AGENT_PATH; do
+        case "$target" in
+            "$dir"*) unset IFS; return 0 ;;
+        esac
+    done
+    unset IFS
+    return 1
+}
+
+audit_skills() {
+    echo "=== SKILLS ==="
+    echo ""
+
+    dirs="$CLAUDE_SKILLS:$CURSOR_SKILLS:$OPENCODE_SKILLS"
+    IFS=':'
+    for dir in $dirs; do
+        unset IFS
+        [ -d "$dir" ] || continue
+        label=""
+        case "$dir" in
+            *".claude"*)  label="Claude" ;;
+            *".cursor"*)  label="Cursor" ;;
+            *".config/opencode"*)  label="OpenCode" ;;
+        esac
+        echo "📁 $dir ($label)"
+
+        local_count=0
+        managed_count=0
+
+        for item in "$dir"/*/; do
+            [ -d "$item" ] || continue
+            item="${item%/}"
+            name=$(basename "$item")
+
+            if is_managed "$item"; then
+                target=$(readlink "$item")
+                case "$target" in
+                    /*) ;;
+                    *) target="../../$(basename "$(dirname "$dir")")/$(basename "$(dirname "$item")")/$name" ;;
+                esac
+                managed_items="$managed_items$name|$target\n"
+                managed_count=$((managed_count + 1))
+            else
+                has_skill_md=""
+                [ -f "$item/SKILL.md" ] && has_skill_md=" [has SKILL.md]"
+                local_items="$local_items$name|$has_skill_md\n"
+                local_count=$((local_count + 1))
+            fi
+        done
+
+        if [ $local_count -gt 0 ]; then
+            printf "$local_items" | while IFS='|' read -r n h; do
+                printf "  ● %-30s [local, not synced]%s\n" "$n" "$h"
+            done
+        fi
+        if [ $managed_count -gt 0 ]; then
+            printf "$managed_items" | while IFS='|' read -r n t; do
+                printf "  ✓ %-30s -> %s\n" "$n" "$t"
+            done
+        fi
+        if [ $((local_count + managed_count)) -eq 0 ]; then
+            echo "    (empty)"
+        fi
+        echo ""
+
+        local_items=""
+        managed_items=""
+    done
+    unset IFS
+}
+
+audit_commands() {
+    echo "=== COMMANDS ==="
+    echo ""
+
+    dirs="$CURSOR_COMMANDS:$OPENCODE_COMMANDS"
+    IFS=':'
+    for dir in $dirs; do
+        unset IFS
+        [ -d "$dir" ] || continue
+        label=""
+        case "$dir" in
+            *".cursor"*)        label="Cursor" ;;
+            *".config/opencode"*)  label="OpenCode" ;;
+        esac
+        echo "📁 $dir ($label)"
+
+        local_count=0
+        managed_count=0
+
+        for item in "$dir"/*; do
+            [ -f "$item" ] || continue
+            name=$(basename "$item")
+
+            if is_managed "$item"; then
+                target=$(readlink "$item")
+                case "$target" in
+                    /*) ;;
+                    *) target="../../$(basename "$(dirname "$dir")")/commands/$name" ;;
+                esac
+                managed_items="$managed_items$name|$target\n"
+                managed_count=$((managed_count + 1))
+            else
+                local_items="$local_items$name\n"
+                local_count=$((local_count + 1))
+            fi
+        done
+
+        if [ $local_count -gt 0 ]; then
+            printf "$local_items" | while read -r n; do
+                printf "  ● %-30s [local, not synced]\n" "$n"
+            done
+        fi
+        if [ $managed_count -gt 0 ]; then
+            printf "$managed_items" | while IFS='|' read -r n t; do
+                printf "  ✓ %-30s -> %s\n" "$n" "$t"
+            done
+        fi
+        if [ $((local_count + managed_count)) -eq 0 ]; then
+            echo "    (empty)"
+        fi
+        echo ""
+
+        local_items=""
+        managed_items=""
+    done
+    unset IFS
+}
+
+echo "🔍 Agent Audit"
+echo "AGENT_PATH: $AGENT_PATH"
+echo ""
+
+case "$FILTER" in
+    skills)    audit_skills ;;
+    commands)  audit_commands ;;
+    *)         audit_skills; audit_commands ;;
+esac
+
+echo "=== Legend ==="
+echo "  ✓ = symlinked (managed by agent-sync)"
+echo "  ● = local file/dir (not managed - candidate for hoisting)"
+echo ""
+echo "To hoist a local skill:"
+echo "  agent-hoist skill ~/.claude/skills/<name>"
+echo "  agent-hoist skill ~/.config/opencode/skills/<name>"
+echo ""
+echo "To hoist a local command:"
+echo "  agent-hoist command ~/.cursor/commands/<name>.md"
+echo "  agent-hoist command ~/.config/opencode/command/<name>.md"

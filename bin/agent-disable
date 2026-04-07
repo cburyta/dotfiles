@@ -1,0 +1,129 @@
+#!/usr/bin/env -S uv run --with claude-code-plugins-sdk --script
+#
+# agent-disable -- disable marketplace plugins/components
+#
+# Usage:
+#   agent-disable <component>@<marketplace>   # Disable specific component
+#   agent-disable <marketplace>              # Disable ALL components from marketplace
+#   agent-disable --all                      # Disable ALL enabled components
+#   agent-disable --help                      # Show help
+#
+# Examples:
+#   agent-disable hooks@cblecker-claude-plugins-git
+#   agent-disable cblecker-claude-plugins-git
+#   agent-disable --all
+
+import os
+import sys
+from pathlib import Path
+
+AGENTS_DIR = Path(os.environ.get('AGENTS_DIR', Path.home() / '.dotfiles' / 'agents'))
+PLUGINS_AVAILABLE = AGENTS_DIR / 'marketplace' / 'plugins-available'
+SKILLS_ENABLED = AGENTS_DIR / 'marketplace' / 'skills-enabled'
+COMMANDS_ENABLED = AGENTS_DIR / 'marketplace' / 'commands-enabled'
+AGENTS_ENABLED = AGENTS_DIR / 'marketplace' / 'agents-enabled'
+HOOKS_ENABLED = AGENTS_DIR / 'marketplace' / 'hooks-enabled'
+MCP_ENABLED = AGENTS_DIR / 'marketplace' / 'mcp-enabled'
+
+ENABLED_DIRS = {
+    'skills': SKILLS_ENABLED,
+    'commands': COMMANDS_ENABLED,
+    'agents': AGENTS_ENABLED,
+    'hooks': HOOKS_ENABLED,
+    'mcp': MCP_ENABLED,
+}
+
+def find_matching_links(pattern: str) -> list:
+    matches = []
+    pattern_lower = pattern.lower()
+    
+    for comp_type, enabled_dir in ENABLED_DIRS.items():
+        if not enabled_dir.exists():
+            continue
+        
+        for link in enabled_dir.iterdir():
+            if pattern in link.name:
+                matches.append((comp_type, link))
+    
+    return matches
+
+def disable_component(component_ref: str):
+    if '@' not in component_ref:
+        print(f"Error: Invalid component reference. Use format: component@marketplace", file=sys.stderr)
+        print(f"Example: hooks@cblecker-claude-plugins-git", file=sys.stderr)
+        sys.exit(1)
+    
+    matches = find_matching_links(component_ref)
+    
+    if not matches:
+        print(f"Error: No enabled component found matching '{component_ref}'", file=sys.stderr)
+        sys.exit(1)
+    
+    for comp_type, link in matches:
+        try:
+            link.unlink()
+            print(f"  [disabled] {link.name} ({comp_type})")
+        except OSError as e:
+            print(f"  [error] Failed to remove {link.name}: {e}", file=sys.stderr)
+
+def disable_marketplace(marketplace: str):
+    marketplace_sanitized = marketplace.replace('/', '-')
+    
+    disabled_count = 0
+    
+    for comp_type, enabled_dir in ENABLED_DIRS.items():
+        if not enabled_dir.exists():
+            continue
+        
+        for link in list(enabled_dir.iterdir()):
+            if marketplace_sanitized in link.name:
+                try:
+                    link.unlink()
+                    print(f"  [disabled] {link.name} ({comp_type})")
+                    disabled_count += 1
+                except OSError as e:
+                    print(f"  [error] Failed to remove {link.name}: {e}", file=sys.stderr)
+    
+    if disabled_count == 0:
+        print("  No components to disable")
+    else:
+        print(f"\nDisabled {disabled_count} component(s)")
+
+def disable_all():
+    disabled_count = 0
+    
+    for comp_type, enabled_dir in ENABLED_DIRS.items():
+        if not enabled_dir.exists():
+            continue
+        
+        for link in list(enabled_dir.iterdir()):
+            try:
+                link.unlink()
+                print(f"  [disabled] {link.name} ({comp_type})")
+                disabled_count += 1
+            except OSError as e:
+                print(f"  [error] Failed to remove {link.name}: {e}", file=sys.stderr)
+    
+    if disabled_count == 0:
+        print("No components to disable")
+    else:
+        print(f"\nDisabled {disabled_count} component(s)")
+
+def main():
+    if len(sys.argv) < 2 or sys.argv[1] == '--help' or sys.argv[1] == '-h':
+        print(__doc__)
+        sys.exit(0)
+    
+    if sys.argv[1] == '--all':
+        disable_all()
+        sys.exit(0)
+    
+    arg = sys.argv[1]
+    
+    if '@' in arg:
+        disable_component(arg)
+    else:
+        disable_marketplace(arg)
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,156 @@
+#!/usr/bin/env -S uv run --with claude-code-plugins-sdk --script
+#
+# agent-pull -- fetch Claude Code marketplace plugins into plugins-available
+#
+# Usage:
+#   agent-pull <owner/repo>           # Pull a marketplace
+#   agent-pull <owner/repo> --update  # Update an existing marketplace
+#   agent-pull --help                # Show help
+#
+# Examples:
+#   agent-pull cblecker/claude-plugins
+#   agent-pull anthropic/claude-code --update
+
+import json
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+AGENTS_DIR = Path(os.environ.get('AGENTS_DIR', Path.home() / '.dotfiles' / 'agents'))
+MARKETPLACE_AVAILABLE = AGENTS_DIR / 'marketplace' / 'plugins-available'
+MARKETPLACE_ENABLED_BASE = AGENTS_DIR / 'marketplace'
+
+def ensure_dirs():
+    MARKETPLACE_AVAILABLE.mkdir(parents=True, exist_ok=True)
+
+def parse_args():
+    update = False
+    repo = None
+    
+    for arg in sys.argv[1:]:
+        if arg == '--help' or arg == '-h':
+            print(__doc__)
+            sys.exit(0)
+        elif arg == '--update':
+            update = True
+        elif arg.startswith('-'):
+            print(f"Unknown option: {arg}", file=sys.stderr)
+            sys.exit(1)
+        else:
+            repo = arg
+    
+    if not repo:
+        print("Error: repository required (e.g., cblecker/claude-plugins)", file=sys.stderr)
+        sys.exit(1)
+    
+    return repo, update
+
+def sanitize_filename(name: str) -> str:
+    return name.replace('/', '-').replace('\\', '-')
+
+def clone_marketplace(repo: str) -> Path:
+    tmpdir = Path(tempfile.mkdtemp(prefix='agent-pull-'))
+    url = f'https://github.com/{repo}.git'
+    
+    print(f"Cloning {repo}...")
+    try:
+        subprocess.run(
+            ['git', 'clone', '--depth', '1', url, str(tmpdir)],
+            check=True,
+            capture_output=True,
+            text=True
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"Error cloning {repo}: {e.stderr}", file=sys.stderr)
+        shutil.rmtree(tmpdir, ignore_errors=True)
+        sys.exit(1)
+    
+    return tmpdir
+
+def load_marketplace(tmpdir: Path) -> dict:
+    marketplace_file = tmpdir / '.claude-plugin' / 'marketplace.json'
+    
+    if not marketplace_file.exists():
+        marketplace_file = tmpdir / 'marketplace.json'
+    
+    if not marketplace_file.exists():
+        print(f"Error: No marketplace.json found in {tmpdir}", file=sys.stderr)
+        shutil.rmtree(tmpdir, ignore_errors=True)
+        sys.exit(1)
+    
+    with open(marketplace_file) as f:
+        return json.load(f)
+
+def copy_plugin(tmpdir: Path, plugin_entry: dict, marketplace_name: str) -> list:
+    source = plugin_entry.get('source', '')
+    
+    if source.startswith('./'):
+        source = source[2:]
+    elif not source:
+        source = f"plugins/{plugin_entry['name']}"
+    
+    source_path = tmpdir / source
+    dest_name = sanitize_filename(f"{marketplace_name}-{plugin_entry['name']}")
+    dest_path = MARKETPLACE_AVAILABLE / dest_name
+    
+    copied = []
+    
+    if not source_path.exists():
+        print(f"  [warn] Source not found: {source_path}")
+        return copied
+    
+    if dest_path.exists():
+        print(f"  [skip] Already exists: {dest_name}")
+    else:
+        shutil.copytree(source_path, dest_path)
+        print(f"  [copied] {plugin_entry['name']} -> {dest_name}")
+        copied.append(dest_name)
+    
+    return copied
+
+def pull_marketplace(repo: str, update: bool):
+    ensure_dirs()
+    
+    marketplace_name = sanitize_filename(repo)
+    dest_marketplace = MARKETPLACE_AVAILABLE / marketplace_name
+    
+    if dest_marketplace.exists() and not update:
+        print(f"Error: {repo} already exists. Use --update to refresh.", file=sys.stderr)
+        sys.exit(1)
+    
+    tmpdir = clone_marketplace(repo)
+    
+    try:
+        marketplace = load_marketplace(tmpdir)
+        
+        plugins = marketplace.get('plugins', [])
+        if not plugins:
+            print("No plugins found in marketplace.")
+            return
+        
+        print(f"Found {len(plugins)} plugin(s) in marketplace")
+        
+        if update and dest_marketplace.exists():
+            print(f"Updating {repo}...")
+        else:
+            print(f"Pulling {repo}...")
+        
+        copied = []
+        for plugin in plugins:
+            result = copy_plugin(tmpdir, plugin, marketplace_name)
+            copied.extend(result)
+        
+        if copied:
+            print(f"\nSuccessfully pulled {len(copied)} plugin(s)")
+        else:
+            print("\nNo new plugins to pull (already exist)")
+        
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+if __name__ == '__main__':
+    repo, update = parse_args()
+    pull_marketplace(repo, update)

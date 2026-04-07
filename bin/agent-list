@@ -1,0 +1,7 @@
+#!/bin/sh
+#
+# agent-list -- list available and enabled marketplace plugins
+#
+# This is a wrapper around agent-enable --list for discoverability
+
+exec agent-enable --list "$@"

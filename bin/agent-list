@@ -1,7 +1,57 @@
 #!/bin/sh
 #
-# agent-list -- list available and enabled marketplace plugins
+# agent-list -- list available skills and commands in AGENT_PATH
 #
-# This is a wrapper around agent-enable --list for discoverability
+# Scans each directory in AGENT_PATH for skills/ and commands/ subdirs.
+# AGENT_PATH is colon-separated, like PATH. Defaults to ~/.dotfiles/agents.
 
-exec agent-enable --list "$@"
+AGENT_PATH="${AGENT_PATH:-$HOME/.dotfiles/agents}"
+
+echo "Skills in AGENT_PATH ($AGENT_PATH):"
+echo ""
+
+found=0
+IFS=':'
+for agents_dir in $AGENT_PATH; do
+  unset IFS
+
+  [ -d "$agents_dir" ] || continue
+  [ -d "$agents_dir/skills" ] || continue
+
+  for skill in "$agents_dir/skills"/*/; do
+    [ -d "$skill" ] || continue
+    name=$(basename "$skill")
+    echo "  $name -> $skill"
+    found=$((found + 1))
+  done
+done
+unset IFS
+
+if [ "$found" -eq 0 ]; then
+  echo "  (no skills found)"
+fi
+
+echo ""
+echo "Commands in AGENT_PATH:"
+echo ""
+
+found=0
+IFS=':'
+for agents_dir in $AGENT_PATH; do
+  unset IFS
+
+  [ -d "$agents_dir" ] || continue
+  [ -d "$agents_dir/commands" ] || continue
+
+  for cmd in "$agents_dir/commands"/*.md; do
+    [ -f "$cmd" ] || continue
+    name=$(basename "$cmd" .md)
+    echo "  $name -> $cmd"
+    found=$((found + 1))
+  done
+done
+unset IFS
+
+if [ "$found" -eq 0 ]; then
+  echo "  (no commands found)"
+fi

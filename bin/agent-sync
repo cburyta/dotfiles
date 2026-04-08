@@ -4,15 +4,12 @@
 #
 # Scans each directory in AGENT_PATH for skills/ and commands/ subdirs,
 # then symlinks them into Claude, OpenCode, and other tool directories.
-#
-# Also syncs from marketplace-enabled directories if they exist.
 # AGENT_PATH is colon-separated, like PATH. Defaults to ~/.dotfiles/agents.
 #
 # Usage:
 #   agent-sync              # symlink everything
 #   agent-sync --copy       # hard-copy instead of symlink
 #   agent-sync --dry-run    # preview without changes
-#   agent-sync --marketplace-only  # only sync marketplace, not AGENT_PATH
 
 set -e
 
@@ -25,34 +22,22 @@ CURSOR_COMMANDS="$HOME/.cursor/commands"
 OPENCODE_SKILLS="$HOME/.config/opencode/skills"
 OPENCODE_COMMANDS="$HOME/.config/opencode/command"
 
-MARKETPLACE_SKILLS_ENABLED="$AGENTS_DIR/marketplace/skills-enabled"
-MARKETPLACE_COMMANDS_ENABLED="$AGENTS_DIR/marketplace/commands-enabled"
-MARKETPLACE_AGENTS_ENABLED="$AGENTS_DIR/marketplace/agents-enabled"
-MARKETPLACE_HOOKS_ENABLED="$AGENTS_DIR/marketplace/hooks-enabled"
-MARKETPLACE_MCP_ENABLED="$AGENTS_DIR/marketplace/mcp-enabled"
-
 MODE="symlink"
 DRY_RUN=false
-MARKETPLACE_ONLY=false
 
 for arg in "$@"; do
   case "$arg" in
     --copy)    MODE="copy" ;;
     --dry-run) DRY_RUN=true ;;
-    --marketplace-only) MARKETPLACE_ONLY=true ;;
     --help|-h)
-      echo "Usage: agent-sync [--copy] [--dry-run] [--marketplace-only]"
+      echo "Usage: agent-sync [--copy] [--dry-run]"
       echo ""
       echo "Deploys agent config from AGENT_PATH to tool-specific locations."
       echo "AGENT_PATH is colon-separated (current: $AGENT_PATH)"
       echo ""
-      echo "Also syncs from marketplace-enabled directories (skills-enabled,"
-      echo "commands-enabled, etc.) to the tool-specific locations."
-      echo ""
       echo "Options:"
       echo "  --copy            Hard-copy files instead of symlinking"
       echo "  --dry-run         Preview what would be done without making changes"
-      echo "  --marketplace-only Only sync marketplace, not AGENT_PATH"
       exit 0
       ;;
     *)
@@ -137,88 +122,3 @@ else
   echo ""
   echo "Synced $synced item(s)."
 fi
-
-# Sync from marketplace-enabled directories
-if [ -d "$MARKETPLACE_SKILLS_ENABLED" ] || [ -d "$MARKETPLACE_COMMANDS_ENABLED" ] || [ -d "$MARKETPLACE_AGENTS_ENABLED" ] || [ -d "$MARKETPLACE_HOOKS_ENABLED" ] || [ -d "$MARKETPLACE_MCP_ENABLED" ]; then
-  echo ""
-  echo "=== Marketplace Sync ==="
-
-  # Sync skills from marketplace
-  if [ -d "$MARKETPLACE_SKILLS_ENABLED" ]; then
-    echo "source: marketplace skills-enabled"
-    for link in "$MARKETPLACE_SKILLS_ENABLED"/*; do
-      [ -e "$link" ] || continue
-      name=$(basename "$link")
-      # Extract skill name before the @marketplace suffix
-      skill_name=$(echo "$name" | sed 's/@.*$//')
-      echo "  marketplace skill: $name"
-      link_or_copy "$link" "$CLAUDE_SKILLS/$skill_name"
-      link_or_copy "$link" "$CURSOR_SKILLS/$skill_name"
-      link_or_copy "$link" "$OPENCODE_SKILLS/$skill_name"
-      synced=$((synced + 1))
-    done
-  fi
-
-  # Sync commands from marketplace
-  if [ -d "$MARKETPLACE_COMMANDS_ENABLED" ]; then
-    echo "source: marketplace commands-enabled"
-    for link in "$MARKETPLACE_COMMANDS_ENABLED"/*; do
-      [ -e "$link" ] || continue
-      name=$(basename "$link")
-      # Extract command name before the @marketplace suffix
-      cmd_name=$(echo "$name" | sed 's/@.*$//')
-      echo "  marketplace command: $name"
-      link_or_copy "$link" "$CURSOR_COMMANDS/$cmd_name"
-      link_or_copy "$link" "$OPENCODE_COMMANDS/$cmd_name"
-      synced=$((synced + 1))
-    done
-  fi
-
-  # Sync agents from marketplace (to Claude and OpenCode)
-  if [ -d "$MARKETPLACE_AGENTS_ENABLED" ]; then
-    echo "source: marketplace agents-enabled"
-    # Agents typically go to ~/.claude/agents/ and ~/.config/opencode/agents/
-    CLAUDE_AGENTS="$HOME/.claude/agents"
-    OPENCODE_AGENTS="$HOME/.config/opencode/agents"
-    for link in "$MARKETPLACE_AGENTS_ENABLED"/*; do
-      [ -e "$link" ] || continue
-      name=$(basename "$link")
-      agent_name=$(echo "$name" | sed 's/@.*$//')
-      echo "  marketplace agent: $name"
-      link_or_copy "$link" "$CLAUDE_AGENTS/$agent_name"
-      link_or_copy "$link" "$OPENCODE_AGENTS/$agent_name"
-      synced=$((synced + 1))
-    done
-  fi
-
-  # Sync hooks from marketplace
-  if [ -d "$MARKETPLACE_HOOKS_ENABLED" ]; then
-    echo "source: marketplace hooks-enabled"
-    for link in "$MARKETPLACE_HOOKS_ENABLED"/*; do
-      [ -e "$link" ] || continue
-      name=$(basename "$link")
-      echo "  marketplace hooks: $name"
-      # Copy hooks.json content to tool-specific locations
-      # Claude uses ~/.claude/settings.json, OpenCode uses different config
-      # For now, just copy to the skills directories as that's common
-      link_or_copy "$link" "$CLAUDE_SKILLS/../settings.json"
-      synced=$((synced + 1))
-    done
-  fi
-
-  # Sync MCP from marketplace
-  if [ -d "$MARKETPLACE_MCP_ENABLED" ]; then
-    echo "source: marketplace mcp-enabled"
-    for link in "$MARKETPLACE_MCP_ENABLED"/*; do
-      [ -e "$link" ] || continue
-      name=$(basename "$link")
-      echo "  marketplace mcp: $name"
-      link_or_copy "$link" "$CLAUDE_SKILLS/../.mcp.json"
-      link_or_copy "$link" "$HOME/.config/opencode/.mcp.json"
-      synced=$((synced + 1))
-    done
-  fi
-fi
-
-echo ""
-echo "Total synced: $synced item(s)."

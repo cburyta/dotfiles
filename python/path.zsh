@@ -9,3 +9,5 @@
 # conda init zsh
 # conda activate <conda-env-path>/
 # export PATH="/usr/local/anaconda3/bin/:$PATH"
+
+export PATH="$(brew --prefix python)/libexec/bin:$PATH"

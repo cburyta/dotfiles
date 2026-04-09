@@ -1,0 +1,1 @@
+export PATH="/opt/homebrew/Cellar/neovim/0.11.7/bin:$PATH"

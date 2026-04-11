@@ -1,5 +1,7 @@
 # Consolidate unit tests
 
+Use this command 
+
 ## Goal
 
 Reduced amount of code to maintain, reduce error prone test patterns.

@@ -13,11 +13,10 @@
 # 2. Start using Cursor Agent:
 #    cursor-agent
 
-# Check if the command is on path
-if test ! $(which cursor-agent)
-then
-    echo "  Installing Cursor CLI Agent for you."
-
+if command -v cursor-agent >/dev/null 2>&1; then
+    echo "Cursor CLI already installed"
+else
+    echo "Installing Cursor CLI Agent..."
     # /bin/bash -c "$(curl -fsS https://cursor.com/install)"
 fi
 

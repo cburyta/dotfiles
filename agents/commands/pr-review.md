@@ -7,4 +7,5 @@ Make sure to test the following
 - check for security issues
 - create a markdown file with the summary of your findings, placed in `.tasks/pr-reviews`
 - ensure unit tests work
+- look for changes made that don't have tests, or have tests that should be updated
 

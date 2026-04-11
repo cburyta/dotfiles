@@ -41,6 +41,7 @@ cask 'linearmouse'      # Mouse customization utility
 # Utilities and Development Tools
 brew 'ack'              # Code search tool
 # brew 'atlassian/homebrew-acli/acli'
+brew 'coleam00/archon/archon'
 brew 'argo'
 brew 'asdf'
 brew 'awscli'

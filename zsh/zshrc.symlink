@@ -100,3 +100,7 @@ zstyle ':completion:*' menu select
 
 if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)"; fi
 NVIM_DIR=/opt/homebrew/Cellar/neovim/0.11.7
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"

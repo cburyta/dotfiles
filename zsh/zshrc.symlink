@@ -104,3 +104,12 @@ NVIM_DIR=/opt/homebrew/Cellar/neovim/0.11.7
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+
+# Claude profile: lumenalta
+alias claude-lumenalta='CLAUDE_CONFIG_DIR="/Users/chris/.claude-lumenalta" claude'
+
+# Claude profile: paramount
+alias claude-paramount='CLAUDE_CONFIG_DIR="/Users/chris/.claude-paramount" claude'
+
+# bun completions
+[ -s "/Users/chris/.bun/_bun" ] && source "/Users/chris/.bun/_bun"

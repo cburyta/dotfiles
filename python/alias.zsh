@@ -1,0 +1,2 @@
+alias pr='poetry run'
+

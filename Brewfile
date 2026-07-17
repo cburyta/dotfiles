@@ -150,3 +150,4 @@ cask 'via'
 # brew 'font-menlo-for-powerline'
 # brew 'xquartz'
 brew "terraform"
+brew "tree-sitter-cli"  # Required by nvim-treesitter's maintained main branch

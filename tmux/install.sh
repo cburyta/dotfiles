@@ -13,6 +13,7 @@ fi
 echo ""
 echo "To install tmux plugins:"
 echo "  1. Start tmux: tmux"
-echo "  2. Press prefix+I (C-a + shift+i)"
+echo "  2. Press prefix+I (C-b + shift+i by default)"
+echo "  3. Open ~/.dotfiles/tmux/TMUX.md for the stock key cheat sheet"
 echo ""
 echo "This will install tmux-resurrect and other plugins."

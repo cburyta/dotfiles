@@ -5,14 +5,6 @@
 set -g default-command "reattach-to-user-namespace -l zsh"
 set -g default-terminal "xterm"
 
-# Use C-a as prefix (easier than C-b)
-unbind C-b
-set -g prefix C-a
-bind C-a send-prefix
-
-# for nested tmux sessions
-bind-key a send-prefix
-
 # Activity Monitoring
 setw -g monitor-activity off
 set -g visual-activity off
@@ -54,59 +46,6 @@ setw -g mode-keys vi
 # Increase display-time for messages
 set -g display-time 4000
 
-######################
-#### Key Bindings ####
-######################
-
-# reload config file
-bind r source-file ~/.tmux.conf \; display "Config Reloaded!"
-
-# split window and fix path
-bind | split-window -h -c "#{pane_current_path}"
-bind - split-window -v -c "#{pane_current_path}"
-bind c new-window -c "#{pane_current_path}"
-
-# Vim-style pane navigation
-bind h select-pane -L
-bind j select-pane -D
-bind k select-pane -U
-bind l select-pane -R
-
-bind -r C-h select-window -t :-
-bind -r C-l select-window -t :+
-
-# Vim-style pane resizing
-bind -r H resize-pane -L 10
-bind -r J resize-pane -D 10
-bind -r K resize-pane -U 10
-bind -r L resize-pane -R 10
-
-# toggle pane full/normal size
-bind u resize-pane -Z
-
-# Copy mode bindings
-bind-key -T copy-mode-vi 'v' send -X begin-selection
-bind-key -T copy-mode-vi 'y' send -X copy-selection-and-cancel
-
-############################
-#### vim-tmux-navigator ####
-############################
-
-# Smart pane switching with awareness of Vim splits.
-# See: https://github.com/christoomey/vim-tmux-navigator
-is_vim="ps -o state= -o comm= -t '#{pane_tty}' \
-    | grep -iqE '^[^TXZ ]+ +(\\S+\\/)?g?(view|n?vim?x?)(diff)?$'"
-bind-key -n C-h if-shell "$is_vim" "send-keys C-h"  "select-pane -L"
-bind-key -n C-j if-shell "$is_vim" "send-keys C-j"  "select-pane -D"
-bind-key -n C-k if-shell "$is_vim" "send-keys C-k"  "select-pane -U"
-bind-key -n C-l if-shell "$is_vim" "send-keys C-l"  "select-pane -R"
-bind-key -n 'C-\' if-shell "$is_vim" "send-keys C-\\" "select-pane -l"
-bind-key -T copy-mode-vi C-h select-pane -L
-bind-key -T copy-mode-vi C-j select-pane -D
-bind-key -T copy-mode-vi C-k select-pane -U
-bind-key -T copy-mode-vi C-l select-pane -R
-bind-key -T copy-mode-vi 'C-\' select-pane -l
-
 #######################
 #### Status Bar ####
 #######################
@@ -121,8 +60,8 @@ set -g message-style fg=colour166,bg=colour232
 set -g status-left-length 60
 set -g status-left "#[fg=colour235,bg=colour252,bold] #S #[fg=colour252,bg=colour238]#[fg=colour238,bg=colour252,bold]#{client_key_table}"
 
-# Status bar - right with shortcuts
-set -g status-right "#[fg=white,bg=blue] %H:%M #[fg=white,bg=black]| #[fg=yellow]C-a |#[fg=white]split v #[fg=yellow]C-a -#[fg=white]split h #[fg=yellow]h/j/k/l#[fg=white]nav #[fg=yellow]d#[fg=white]detach #[fg=yellow]c#[fg=white]win"
+# Status bar - right with default tmux reminders
+set -g status-right "#[fg=white,bg=blue] %H:%M #[fg=white,bg=black]| #[fg=yellow]C-b ?#[fg=white]keys #[fg=yellow]C-b %#[fg=white]split-h #[fg=yellow]C-b \"#[fg=white]split-v #[fg=yellow]C-b z#[fg=white]zoom"
 
 #######################
 #### Plugins (tpm) ####

@@ -4,7 +4,13 @@
 .jj
 /.local
 /.docs
+# sensitive files (prevent accidental commits)
 .env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
 
 # editors
 /.vscode

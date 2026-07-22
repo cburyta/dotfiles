@@ -121,8 +121,6 @@ brew 'ripgrep'
 brew 'ruff', link: false
 brew 'saml2aws'         # AWS CLI from SAML, useful for accessing AWS resources via SAML
 brew 'skaffold'
-brew 'scrypster/tap/muninn' # active memory databsae
-brew 'specstoryai/tap/specstory' # wrap agent CLI to save prompts
 brew 'spaceman-diff'    # Display images in Git diffs
 brew 'sqlfluff'
 brew 'sqruff'

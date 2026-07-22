@@ -1,2 +1,2 @@
 # global installed openspec-ralph
-alias openspec-ralph='/Users/chris/.cursor/openspec-ralph/bin/osr'
+alias openspec-ralph='$HOME/.cursor/openspec-ralph/bin/osr'

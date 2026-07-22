@@ -87,7 +87,7 @@ export PATH="$PATH:$GROOVY_HOME/bin"
 export PATH=/Applications/SnowSQL.app/Contents/MacOS:$PATH
 
 # Added by LM Studio CLI (lms)
-export PATH="$PATH:/Users/chris/.lmstudio/bin"
+export PATH="$PATH:$HOME/.lmstudio/bin"
 # End of LM Studio CLI section
 
 
@@ -105,10 +105,10 @@ export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
 # Claude profile: lumenalta
-alias claude-lumenalta='CLAUDE_CONFIG_DIR="/Users/chris/.claude-lumenalta" claude'
+alias claude-lumenalta='CLAUDE_CONFIG_DIR="$HOME/.claude-lumenalta" claude'
 
 # Claude profile: paramount
-alias claude-paramount='CLAUDE_CONFIG_DIR="/Users/chris/.claude-paramount" claude'
+alias claude-paramount='CLAUDE_CONFIG_DIR="$HOME/.claude-paramount" claude'
 
 # bun completions
-[ -s "/Users/chris/.bun/_bun" ] && source "/Users/chris/.bun/_bun"
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"

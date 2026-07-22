@@ -13,7 +13,7 @@ Enrich and complete Obsidian notes with structured metadata, formatted links, an
 ## Vault Location
 
 ```
-/Users/chris/Library/CloudStorage/Dropbox/Notes/cburyta/
+~/Library/CloudStorage/Dropbox/Notes/cburyta/
 ```
 
 ## Core Tasks

@@ -51,4 +51,4 @@
 [init]
 	defaultBranch = main
 [safe]
-	directory = /Users/chris/.archon/workspaces/cburyta/homelab-utils/source
+	directory = ~/.archon/workspaces/cburyta/homelab-utils/source

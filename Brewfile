@@ -13,7 +13,6 @@ cask_args appdir: '/Applications'
 # Taps for additional repositories
 tap 'homebrew/bundle'       # Homebrew Bundle for managing formulae and casks
 tap 'derailed/k9s'          # k9s
-tap 'git-chglog/git-chglog' # git-chglog
 tap 'hashicorp/tap'         # packer, terraform
 tap 'nilukush/ytt'          # youtube-transcript-tools
 tap 'qmk/qmk'               # qmk
@@ -68,7 +67,6 @@ brew 'fmt'              # Simplifying and optimizing text files
 brew 'fnm'              # Node version manager
 brew 'node'             # Node.js runtime (fnm manages versions, but needed for compat)
 brew 'gh'
-brew 'git-chglog/git-chglog/git-chglog'
 brew 'ghostscript'
 brew 'go'
 brew 'go-parquet-tools'
@@ -78,6 +76,7 @@ brew 'grc'              # Generic colorizer
 brew 'groovy'           # Groovy programming language support
 brew 'gum'
 brew 'helm'
+brew 'herdr'            # Multiple agent mutiplexer
 brew 'hunk'
 brew 'imagemagick'
 brew 'infisical/get-cli/infisical'
@@ -94,8 +93,6 @@ brew 'libheif'
 brew 'libmicrohttpd'
 brew 'librist'
 brew 'llmfit'
-brew 'marcus/tap/sidecar' # Agentic workflow optics
-brew 'marcus/tap/td'      # Agentic task tracking (sidecar)
 brew 'marp-cli'           # Markdown to HTML/PDF/PPT slides
 brew 'minio'
 brew 'make'

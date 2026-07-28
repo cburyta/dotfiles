@@ -77,7 +77,7 @@ brew 'grc'              # Generic colorizer
 brew 'groovy'           # Groovy programming language support
 brew 'gum'
 brew 'helm'
-brew 'herdr'            # Multiple agent mutiplexer
+# brew 'herdr'            # Install via https://herdr.dev/install.sh (supports `herdr update --handoff`)
 brew 'hunk'
 brew 'imagemagick'
 brew 'infisical/get-cli/infisical'

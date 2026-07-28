@@ -14,7 +14,7 @@ cask_args appdir: '/Applications'
 tap 'homebrew/bundle'       # Homebrew Bundle for managing formulae and casks
 tap 'derailed/k9s'          # k9s
 tap 'hashicorp/tap'         # packer, terraform
-tap 'nilukush/ytt'          # youtube-transcript-tools
+# tap 'nilukush/ytt'          # youtube-transcript-tools, trying yt-dlp instead to avoid requirement of a tap
 tap 'qmk/qmk'               # qmk
 tap 'sst/tap'               # opencode
 # tap 'homebrew/cask-fonts'   # Font management is now integrated into Homebrew core, not in a separate tap
@@ -53,8 +53,9 @@ brew 'awscli'
 brew 'bats-core'
 brew 'black'
 brew 'btop'
-brew 'charmbracelet/tap/soft-serve'
+brew 'charmbracelet/tap/soft-serve' # Git server
 brew 'charmbracelet/tap/crush'
+brew 'charmbracelet/tap/glow'       # Markdown reader
 brew 'cheat'            # Command-line cheat sheets
 brew 'cmake'
 brew 'coreutils'        # GNU utilities for Unix-like operating systems
@@ -98,7 +99,7 @@ brew 'minio'
 brew 'make'
 brew 'minio-mc'
 brew 'neovim'
-brew 'nilukush/ytt/youtube-transcript-tools'
+# brew 'nilukush/ytt/youtube-transcript-tools' # `ytt fetch "https://youtu.be/VIDEO_ID"`
 brew 'ninja'
 brew 'openconnect'
 brew 'openblas'
@@ -110,8 +111,6 @@ brew 'pkgconf'
 brew 'poetry'
 brew 'postgresql@14'
 brew 'pre-commit'
-brew 'python@3.10', link: false
-brew 'python@3.11'
 brew 'python@3.12', link: true
 brew 'python@3.14'
 brew 'qmk/qmk/qmk'
@@ -122,6 +121,7 @@ brew 'ruff', link: false
 brew 'saml2aws'         # AWS CLI from SAML, useful for accessing AWS resources via SAML
 brew 'skaffold'
 brew 'spaceman-diff'    # Display images in Git diffs
+brew 'sqlite'           # For grc dep initially
 brew 'sqlfluff'
 brew 'sqruff'
 brew 'sst/tap/opencode' # AI CLI Harness
@@ -140,7 +140,7 @@ brew 'wget'             # Network utility for downloading files from the web
 brew 'worktrunk'        # CLI for Git worktree management
 brew 'yamllint'
 brew 'yazi'             # TUI File Browser
-brew 'yt-dlp'
+brew 'yt-dlp'           # Youtube transcript fetch, `yt-dlp <VIDEO_ID_OR_URL>`
 brew 'yq'               # YAML, JSON, INI and XML processor
 brew 'zstd'
 brew 'openjdk'          # Java runtime

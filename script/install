@@ -14,7 +14,7 @@ set -e
 
 # find the installers and run them iteratively
 # Don't use set -e here since some installers may fail gracefully
-for installer in $(find . -name install.sh); do
+for installer in $(find . -name install.sh ! -path './*/*/install.sh'); do
     echo "› ${installer}"
     set +e
     sh "${installer}"

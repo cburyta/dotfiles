@@ -62,7 +62,7 @@ is_managed() {
 }
 
 audit_hoistable() {
-  SKILL_DIRS="$HOME/.claude/skills $HOME/.cursor/skills $HOME/.config/opencode/skills"
+  SKILL_DIRS="$HOME/.claude/skills $HOME/.pi/agent/skills $HOME/.cursor/skills $HOME/.config/opencode/skills"
   COMMAND_DIRS="$HOME/.cursor/commands $HOME/.config/opencode/command $HOME/.claude/commands"
 
   found=0

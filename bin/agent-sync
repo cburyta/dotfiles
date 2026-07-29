@@ -3,13 +3,14 @@
 # agent-sync -- deploy agent config from AGENT_PATH to tool-specific locations
 #
 # Scans each directory in AGENT_PATH for skills/ and commands/ subdirs,
-# then symlinks them into Claude, OpenCode, and other tool directories.
+# then symlinks them into Claude, pi, OpenCode, and other tool directories.
 # AGENT_PATH is colon-separated, like PATH. Defaults to ~/.dotfiles/agents.
 #
 # Usage:
 #   agent-sync              # symlink everything
 #   agent-sync --copy       # hard-copy instead of symlink
 #   agent-sync --dry-run    # preview without changes
+#   agent-sync --prune      # remove dangling managed symlinks
 
 set -e
 
@@ -17,6 +18,7 @@ AGENT_PATH="${AGENT_PATH:-$HOME/.dotfiles/agents}"
 AGENTS_DIR="${AGENTS_DIR:-$HOME/.dotfiles/agents}"
 
 CLAUDE_SKILLS="$HOME/.claude/skills"
+PI_SKILLS="$HOME/.pi/agent/skills"
 CURSOR_SKILLS="$HOME/.cursor/skills"
 CURSOR_COMMANDS="$HOME/.cursor/commands"
 OPENCODE_SKILLS="$HOME/.config/opencode/skills"
@@ -24,13 +26,15 @@ OPENCODE_COMMANDS="$HOME/.config/opencode/command"
 
 MODE="symlink"
 DRY_RUN=false
+PRUNE=false
 
 for arg in "$@"; do
   case "$arg" in
     --copy)    MODE="copy" ;;
     --dry-run) DRY_RUN=true ;;
+    --prune)   PRUNE=true ;;
     --help|-h)
-      echo "Usage: agent-sync [--copy] [--dry-run]"
+      echo "Usage: agent-sync [--copy] [--dry-run] [--prune]"
       echo ""
       echo "Deploys agent config from AGENT_PATH to tool-specific locations."
       echo "AGENT_PATH is colon-separated (current: $AGENT_PATH)"
@@ -38,6 +42,7 @@ for arg in "$@"; do
       echo "Options:"
       echo "  --copy            Hard-copy files instead of symlinking"
       echo "  --dry-run         Preview what would be done without making changes"
+      echo "  --prune           Remove dangling symlinks managed by AGENT_PATH"
       exit 0
       ;;
     *)
@@ -80,6 +85,49 @@ link_or_copy() {
   fi
 }
 
+prune_stale_links() {
+  for dest_root in \
+    "$CLAUDE_SKILLS" "$PI_SKILLS" "$CURSOR_SKILLS" "$OPENCODE_SKILLS" \
+    "$CURSOR_COMMANDS" "$OPENCODE_COMMANDS"; do
+    [ -d "$dest_root" ] || continue
+
+    for dest in "$dest_root"/*; do
+      [ -L "$dest" ] || continue
+      target=$(readlink "$dest")
+      case "$target" in
+        /*) ;;
+        *) target="$(dirname "$dest")/$target" ;;
+      esac
+
+      # Only prune dangling links below a configured source root.
+      [ -e "$target" ] && continue
+      managed=false
+      old_ifs="$IFS"
+      IFS=':'
+      for agents_dir in $AGENT_PATH; do
+        root="${agents_dir%/}"
+        case "$target" in
+          "$root"/*) managed=true; break ;;
+        esac
+      done
+      IFS="$old_ifs"
+
+      [ "$managed" = true ] || continue
+      if [ "$DRY_RUN" = true ]; then
+        echo "  [dry-run] remove stale link $dest -> $target"
+      else
+        rm "$dest"
+        echo "  [removed] stale link $dest -> $target"
+      fi
+    done
+  done
+}
+
+if [ "$PRUNE" = true ]; then
+  echo "Pruning stale managed links..."
+  prune_stale_links
+fi
+
 synced=0
 
 IFS=':'
@@ -89,13 +137,14 @@ for agents_dir in $AGENT_PATH; do
   [ -d "$agents_dir" ] || continue
   echo "source: $agents_dir"
 
-  # Skills -> Claude + Cursor + OpenCode
+  # Skills -> Claude + pi + Cursor + OpenCode
   if [ -d "$agents_dir/skills" ]; then
     for skill in "$agents_dir/skills"/*/; do
       [ -d "$skill" ] || continue
       name=$(basename "$skill")
       echo "  skill: $name"
       link_or_copy "$skill" "$CLAUDE_SKILLS/$name"
+      link_or_copy "$skill" "$PI_SKILLS/$name"
       link_or_copy "$skill" "$CURSOR_SKILLS/$name"
       link_or_copy "$skill" "$OPENCODE_SKILLS/$name"
       synced=$((synced + 1))

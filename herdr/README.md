@@ -16,8 +16,10 @@ herdr-work alpha
 herdr-work alpha --branch feature/ABC-123-widget
 herdr-work alpha --dir ~/Repos/project
 herdr-work alpha --dir ~/Repos/project --no-worktree
-herdr-work alpha --worktree-dir ~/Repos/project/worktrees
 ```
 
-The command must run from an existing Herdr pane. Use `--no-worktree` when the
-new tab should share the supplied/current directory.
+The command must run from an existing Herdr pane. New worktrees are always
+siblings of the repository's main worktree, named `<repo>-<slug>`. This remains
+true even when the command is run from another worktree, so worktrees are never
+nested. Use `--no-worktree` when the new tab should share the supplied/current
+directory.

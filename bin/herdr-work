@@ -14,7 +14,6 @@ Options:
   --branch NAME          Branch to create (default: work/<slug>)
   --dir PATH             Source directory (default: current directory)
   --no-worktree          Use the source directory directly
-  --worktree-dir PATH    Parent directory (default: <repo>/worktrees)
   --focus                Focus the new tab
   -h, --help             Show this help
 EOF
@@ -41,7 +40,6 @@ shift
 branch=
 source_dir=$PWD
 use_worktree=1
-worktree_dir=
 focus=--no-focus
 
 while [ "$#" -gt 0 ]; do
@@ -59,11 +57,6 @@ while [ "$#" -gt 0 ]; do
         --no-worktree)
             use_worktree=0
             shift
-            ;;
-        --worktree-dir)
-            [ "$#" -ge 2 ] || fail "--worktree-dir requires a value"
-            worktree_dir=$2
-            shift 2
             ;;
         --focus)
             focus=--focus
@@ -85,7 +78,6 @@ command -v jq >/dev/null 2>&1 || fail "jq is required to parse Herdr responses"
 
 if [ "$use_worktree" -eq 0 ]; then
     [ -z "$branch" ] || fail "--branch cannot be used with --no-worktree"
-    [ -z "$worktree_dir" ] || fail "--worktree-dir cannot be used with --no-worktree"
 fi
 
 [ -d "$source_dir" ] || fail "directory does not exist: $source_dir"
@@ -104,9 +96,9 @@ created_worktree=0
 created_tab=
 
 if [ "$use_worktree" -eq 1 ]; then
-    repo_root=$(git -C "$source_dir" rev-parse --show-toplevel 2>/dev/null) || \
+    git_common_dir=$(git -C "$source_dir" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || \
         fail "not inside a Git repository: $source_dir"
-    repo_root=$(cd -P "$repo_root" && pwd)
+    repo_root=$(cd -P "$(dirname "$git_common_dir")" && pwd)
 
     branch=${branch:-work/$slug}
     case "$branch" in
@@ -117,13 +109,9 @@ if [ "$use_worktree" -eq 1 ]; then
     git -C "$repo_root" show-ref --verify --quiet "refs/heads/$branch" && \
         fail "branch already exists: $branch"
 
-    if [ -z "$worktree_dir" ]; then
-        worktree_dir=$repo_root/worktrees
-    elif [ "${worktree_dir#/}" = "$worktree_dir" ]; then
-        worktree_dir=$repo_root/$worktree_dir
-    fi
-    worktree_dir=$(mkdir -p "$worktree_dir" && cd -P "$worktree_dir" && pwd)
-    worktree_path=$worktree_dir/$slug
+    repo_parent=$(dirname "$repo_root")
+    repo_name=$(basename "$repo_root")
+    worktree_path=$repo_parent/$repo_name-$slug
     [ ! -e "$worktree_path" ] || fail "worktree path already exists: $worktree_path"
 
     git -C "$repo_root" worktree add -b "$branch" "$worktree_path" HEAD >/dev/null

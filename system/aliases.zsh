@@ -6,6 +6,7 @@ then
   alias ls="gls -F --color"
   alias l="gls -lAh --color"
   alias ll="gls -l --color"
+  alias lll="gls -lah --color"
 fi
 
 if #(gmake &>/dev/null)

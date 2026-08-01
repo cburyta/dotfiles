@@ -1,0 +1,167 @@
+#!/bin/sh
+# Create a deterministic Herdr work tab with agent, browse, and term panes.
+
+set -eu
+
+usage() {
+    cat <<'EOF'
+Usage: herdr-work NAME [options]
+
+Create a new tab with three named panes: agent, browse, and term.
+By default, create a worktree from the current directory first.
+
+Options:
+  --branch NAME          Branch to create (default: work/<slug>)
+  --dir PATH             Source directory (default: current directory)
+  --no-worktree          Use the source directory directly
+  --worktree-dir PATH    Parent directory (default: <repo>/worktrees)
+  --focus                Focus the new tab
+  -h, --help             Show this help
+EOF
+}
+
+fail() {
+    printf 'herdr-work: %s\n' "$1" >&2
+    exit 1
+}
+
+if [ "$#" -eq 0 ]; then
+    usage >&2
+    exit 2
+fi
+case "$1" in
+    -h|--help)
+        usage
+        exit 0
+        ;;
+esac
+name=$1
+shift
+
+branch=
+source_dir=$PWD
+use_worktree=1
+worktree_dir=
+focus=--no-focus
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --branch)
+            [ "$#" -ge 2 ] || fail "--branch requires a value"
+            branch=$2
+            shift 2
+            ;;
+        --dir)
+            [ "$#" -ge 2 ] || fail "--dir requires a value"
+            source_dir=$2
+            shift 2
+            ;;
+        --no-worktree)
+            use_worktree=0
+            shift
+            ;;
+        --worktree-dir)
+            [ "$#" -ge 2 ] || fail "--worktree-dir requires a value"
+            worktree_dir=$2
+            shift 2
+            ;;
+        --focus)
+            focus=--focus
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            fail "unknown option: $1"
+            ;;
+    esac
+done
+
+[ "${HERDR_ENV:-}" = 1 ] || fail "must be run inside a Herdr pane"
+command -v herdr >/dev/null 2>&1 || fail "herdr is not on PATH"
+command -v jq >/dev/null 2>&1 || fail "jq is required to parse Herdr responses"
+
+if [ "$use_worktree" -eq 0 ]; then
+    [ -z "$branch" ] || fail "--branch cannot be used with --no-worktree"
+    [ -z "$worktree_dir" ] || fail "--worktree-dir cannot be used with --no-worktree"
+fi
+
+[ -d "$source_dir" ] || fail "directory does not exist: $source_dir"
+source_dir=$(cd -P "$source_dir" && pwd)
+
+slug=$(printf '%s' "$name" | tr '[:space:]/' '--' | tr -cd '[:alnum:]_.-')
+[ -n "$slug" ] || fail "name must contain at least one letter or number"
+[ "$slug" != "." ] && [ "$slug" != ".." ] || fail "invalid name: $name"
+
+workspace=${HERDR_WORKSPACE_ID:-}
+[ -n "$workspace" ] || fail "HERDR_WORKSPACE_ID is not set"
+
+repo_root=
+worktree_path=$source_dir
+created_worktree=0
+created_tab=
+
+if [ "$use_worktree" -eq 1 ]; then
+    repo_root=$(git -C "$source_dir" rev-parse --show-toplevel 2>/dev/null) || \
+        fail "not inside a Git repository: $source_dir"
+    repo_root=$(cd -P "$repo_root" && pwd)
+
+    branch=${branch:-work/$slug}
+    case "$branch" in
+        -*|*' '*|*'..'*|*'//'*) fail "invalid branch name: $branch" ;;
+    esac
+    git -C "$repo_root" check-ref-format --branch "$branch" >/dev/null 2>&1 || \
+        fail "invalid branch name: $branch"
+    git -C "$repo_root" show-ref --verify --quiet "refs/heads/$branch" && \
+        fail "branch already exists: $branch"
+
+    if [ -z "$worktree_dir" ]; then
+        worktree_dir=$repo_root/worktrees
+    elif [ "${worktree_dir#/}" = "$worktree_dir" ]; then
+        worktree_dir=$repo_root/$worktree_dir
+    fi
+    worktree_dir=$(mkdir -p "$worktree_dir" && cd -P "$worktree_dir" && pwd)
+    worktree_path=$worktree_dir/$slug
+    [ ! -e "$worktree_path" ] || fail "worktree path already exists: $worktree_path"
+
+    git -C "$repo_root" worktree add -b "$branch" "$worktree_path" HEAD >/dev/null
+    created_worktree=1
+fi
+
+cleanup() {
+    status=$?
+    if [ "$status" -ne 0 ]; then
+        if [ -n "$created_tab" ]; then
+            herdr tab close "$created_tab" >/dev/null 2>&1 || true
+        fi
+        if [ "$created_worktree" -eq 1 ]; then
+            git -C "$repo_root" worktree remove --force "$worktree_path" >/dev/null 2>&1 || true
+        fi
+    fi
+    exit "$status"
+}
+trap cleanup EXIT INT TERM
+
+tab_json=$(herdr tab create \
+    --workspace "$workspace" \
+    --cwd "$worktree_path" \
+    --label "$name" \
+    "$focus")
+tab_id=$(printf '%s' "$tab_json" | jq -er '.result.tab.tab_id') || fail "could not read new tab ID"
+root_pane=$(printf '%s' "$tab_json" | jq -er '.result.root_pane.pane_id') || fail "could not read root pane ID"
+created_tab=$tab_id
+
+herdr pane rename "$root_pane" agent >/dev/null
+browse_json=$(herdr pane split "$root_pane" --direction right --cwd "$worktree_path" --no-focus)
+browse_pane=$(printf '%s' "$browse_json" | jq -er '.result.pane.pane_id') || fail "could not read browse pane ID"
+herdr pane rename "$browse_pane" browse >/dev/null
+term_json=$(herdr pane split "$browse_pane" --direction down --cwd "$worktree_path" --no-focus)
+term_pane=$(printf '%s' "$term_json" | jq -er '.result.pane.pane_id') || fail "could not read term pane ID"
+herdr pane rename "$term_pane" term >/dev/null
+
+trap - EXIT INT TERM
+printf 'tab=%s\nworktree=%s\n' "$tab_id" "$worktree_path"
+[ "$created_worktree" -eq 1 ] && printf 'branch=%s\n' "$branch"
+printf 'panes=agent,browse,term\n'

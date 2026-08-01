@@ -1,21 +1,11 @@
 #!/bin/sh
 #
 # agent-sync -- deploy agent config from AGENT_PATH to tool-specific locations
-#
-# Scans each directory in AGENT_PATH for skills/ and commands/ subdirs,
-# then symlinks them into Claude, pi, OpenCode, and other tool directories.
-# AGENT_PATH is colon-separated, like PATH. Defaults to ~/.dotfiles/agents.
-#
-# Usage:
-#   agent-sync              # symlink everything
-#   agent-sync --copy       # hard-copy instead of symlink
-#   agent-sync --dry-run    # preview without changes
-#   agent-sync --prune      # remove dangling managed symlinks
 
 set -e
 
 AGENT_PATH="${AGENT_PATH:-$HOME/.dotfiles/agents}"
-AGENTS_DIR="${AGENTS_DIR:-$HOME/.dotfiles/agents}"
+STATE_FILE="${AGENT_SYNC_STATE_FILE:-${XDG_STATE_HOME:-$HOME/.local/state}/agent-sync/manifest}"
 
 CLAUDE_SKILLS="$HOME/.claude/skills"
 PI_SKILLS="$HOME/.pi/agent/skills"
@@ -27,34 +17,103 @@ OPENCODE_COMMANDS="$HOME/.config/opencode/command"
 MODE="symlink"
 DRY_RUN=false
 PRUNE=false
+LINKED=false
+LEGACY_ROOTS="${AGENT_SYNC_LEGACY_ROOTS:-}"
 
-for arg in "$@"; do
-  case "$arg" in
-    --copy)    MODE="copy" ;;
-    --dry-run) DRY_RUN=true ;;
-    --prune)   PRUNE=true ;;
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --copy) MODE="copy"; shift ;;
+    --dry-run) DRY_RUN=true; shift ;;
+    --prune) PRUNE=true; shift ;;
+    --legacy-root=*)
+      LEGACY_ROOTS="${LEGACY_ROOTS:+$LEGACY_ROOTS:}${1#--legacy-root=}"
+      shift
+      ;;
+    --legacy-root)
+      [ "$#" -ge 2 ] || { echo "--legacy-root requires a path" >&2; exit 1; }
+      LEGACY_ROOTS="${LEGACY_ROOTS:+$LEGACY_ROOTS:}$2"
+      shift 2
+      ;;
     --help|-h)
-      echo "Usage: agent-sync [--copy] [--dry-run] [--prune]"
+      echo "Usage: agent-sync [--copy] [--dry-run] [--prune] [--legacy-root PATH]"
       echo ""
       echo "Deploys agent config from AGENT_PATH to tool-specific locations."
       echo "AGENT_PATH is colon-separated (current: $AGENT_PATH)"
       echo ""
       echo "Options:"
-      echo "  --copy            Hard-copy files instead of symlinking"
-      echo "  --dry-run         Preview what would be done without making changes"
-      echo "  --prune           Remove dangling symlinks managed by AGENT_PATH"
+      echo "  --copy                 Hard-copy files instead of symlinking"
+      echo "  --dry-run              Preview what would be done without changes"
+      echo "  --prune                Remove managed destinations no longer in AGENT_PATH"
+      echo "  --legacy-root PATH     Remove old managed links below PATH (repeatable)"
       exit 0
       ;;
     *)
-      echo "Unknown option: $arg" >&2
+      echo "Unknown option: $1" >&2
       exit 1
       ;;
   esac
 done
 
+TMP_EXPECTED="$(mktemp "${TMPDIR:-/tmp}/agent-sync.expected.XXXXXX")"
+TMP_MANIFEST="$(mktemp "${TMPDIR:-/tmp}/agent-sync.manifest.XXXXXX")"
+cleanup() {
+  rm -f "$TMP_EXPECTED" "$TMP_MANIFEST"
+}
+trap cleanup EXIT HUP INT TERM
+
+record_expected() {
+  printf '%s\t%s\t%s\n' "$1" "$2" "$MODE" >> "$TMP_EXPECTED"
+}
+
+scan_sources() {
+  old_ifs="$IFS"
+  IFS=':'
+  for agents_dir in $AGENT_PATH; do
+    IFS="$old_ifs"
+    [ -d "$agents_dir" ] || continue
+
+    if [ -d "$agents_dir/skills" ]; then
+      for skill in "$agents_dir/skills"/*/; do
+        [ -d "$skill" ] || continue
+        name=$(basename "$skill")
+        record_expected "$CLAUDE_SKILLS/$name" "$skill" "$MODE"
+        record_expected "$PI_SKILLS/$name" "$skill" "$MODE"
+        record_expected "$CURSOR_SKILLS/$name" "$skill" "$MODE"
+        record_expected "$OPENCODE_SKILLS/$name" "$skill" "$MODE"
+      done
+    fi
+
+    if [ -d "$agents_dir/commands" ]; then
+      for cmd in "$agents_dir/commands"/*; do
+        [ -f "$cmd" ] || continue
+        name=$(basename "$cmd")
+        record_expected "$CURSOR_COMMANDS/$name" "$cmd" "$MODE"
+        record_expected "$OPENCODE_COMMANDS/$name" "$cmd" "$MODE"
+      done
+    fi
+
+    IFS=':'
+  done
+  IFS="$old_ifs"
+}
+
+is_expected() {
+  awk -F '\t' -v destination="$1" '$1 == destination { found=1 } END { exit !found }' "$TMP_EXPECTED"
+}
+
+is_under_root() {
+  target="$1"
+  root="${2%/}"
+  case "$target" in
+    "$root"/*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 link_or_copy() {
-  local src="$1"
-  local dest="$2"
+  src="$1"
+  dest="$2"
+  LINKED=false
 
   if [ "$DRY_RUN" = true ]; then
     echo "  [dry-run] $src -> $dest"
@@ -62,10 +121,10 @@ link_or_copy() {
   fi
 
   if [ -L "$dest" ]; then
-    local current
     current=$(readlink "$dest")
     if [ "$current" = "$src" ]; then
       echo "  [ok] $dest (already linked)"
+      LINKED=true
       return
     fi
     rm "$dest"
@@ -75,7 +134,6 @@ link_or_copy() {
   fi
 
   mkdir -p "$(dirname "$dest")"
-
   if [ "$MODE" = "copy" ]; then
     cp -R "$src" "$dest"
     echo "  [copied] $src -> $dest"
@@ -83,87 +141,123 @@ link_or_copy() {
     ln -s "$src" "$dest"
     echo "  [linked] $src -> $dest"
   fi
+  LINKED=true
 }
 
-prune_stale_links() {
-  for dest_root in \
-    "$CLAUDE_SKILLS" "$PI_SKILLS" "$CURSOR_SKILLS" "$OPENCODE_SKILLS" \
-    "$CURSOR_COMMANDS" "$OPENCODE_COMMANDS"; do
-    [ -d "$dest_root" ] || continue
+remove_destination() {
+  dest="$1"
+  reason="$2"
+  [ -e "$dest" ] || [ -L "$dest" ] || return
+  if [ "$DRY_RUN" = true ]; then
+    echo "  [dry-run] remove $reason $dest"
+  else
+    rm -rf "$dest"
+    echo "  [removed] $reason $dest"
+  fi
+}
 
-    for dest in "$dest_root"/*; do
-      [ -L "$dest" ] || continue
-      target=$(readlink "$dest")
-      case "$target" in
-        /*) ;;
-        *) target="$(dirname "$dest")/$target" ;;
-      esac
-
-      # Only prune dangling links below a configured source root.
-      [ -e "$target" ] && continue
-      managed=false
-      old_ifs="$IFS"
-      IFS=':'
-      for agents_dir in $AGENT_PATH; do
-        root="${agents_dir%/}"
+prune_legacy_links() {
+  old_ifs="$IFS"
+  IFS=':'
+  for legacy_root in $LEGACY_ROOTS; do
+    IFS="$old_ifs"
+    [ -n "$legacy_root" ] || continue
+    for dest_root in \
+      "$CLAUDE_SKILLS" "$PI_SKILLS" "$CURSOR_SKILLS" "$OPENCODE_SKILLS" \
+      "$CURSOR_COMMANDS" "$OPENCODE_COMMANDS"; do
+      [ -d "$dest_root" ] || continue
+      for dest in "$dest_root"/*; do
+        [ -L "$dest" ] || continue
+        target=$(readlink "$dest")
         case "$target" in
-          "$root"/*) managed=true; break ;;
+          /*) ;;
+          *) target="$(dirname "$dest")/$target" ;;
         esac
+        if is_under_root "$target" "$legacy_root"; then
+          remove_destination "$dest" "legacy managed link"
+        fi
       done
-      IFS="$old_ifs"
-
-      [ "$managed" = true ] || continue
-      if [ "$DRY_RUN" = true ]; then
-        echo "  [dry-run] remove stale link $dest -> $target"
-      else
-        rm "$dest"
-        echo "  [removed] stale link $dest -> $target"
-      fi
     done
+    IFS=':'
   done
+  IFS="$old_ifs"
 }
+
+prune_manifest() {
+  [ -f "$STATE_FILE" ] || return 0
+  while IFS="$(printf '\t')" read -r dest src mode; do
+    [ -n "$dest" ] || continue
+    is_expected "$dest" && continue
+
+    if [ "$mode" = "symlink" ] && [ -L "$dest" ]; then
+      current=$(readlink "$dest")
+      [ "$current" = "$src" ] || continue
+    elif [ "$mode" = "copy" ] && [ -e "$dest" ] && [ ! -L "$dest" ]; then
+      :
+    else
+      continue
+    fi
+    remove_destination "$dest" "stale managed destination"
+  done < "$STATE_FILE"
+}
+
+scan_sources
 
 if [ "$PRUNE" = true ]; then
-  echo "Pruning stale managed links..."
-  prune_stale_links
+  echo "Pruning stale managed destinations..."
+  prune_manifest
+  prune_legacy_links
 fi
 
 synced=0
-
+: > "$TMP_MANIFEST"
+old_ifs="$IFS"
 IFS=':'
 for agents_dir in $AGENT_PATH; do
-  unset IFS
-
+  IFS="$old_ifs"
   [ -d "$agents_dir" ] || continue
   echo "source: $agents_dir"
 
-  # Skills -> Claude + pi + Cursor + OpenCode
   if [ -d "$agents_dir/skills" ]; then
     for skill in "$agents_dir/skills"/*/; do
       [ -d "$skill" ] || continue
       name=$(basename "$skill")
       echo "  skill: $name"
-      link_or_copy "$skill" "$CLAUDE_SKILLS/$name"
-      link_or_copy "$skill" "$PI_SKILLS/$name"
-      link_or_copy "$skill" "$CURSOR_SKILLS/$name"
-      link_or_copy "$skill" "$OPENCODE_SKILLS/$name"
+      for dest_root in "$CLAUDE_SKILLS" "$PI_SKILLS" "$CURSOR_SKILLS" "$OPENCODE_SKILLS"; do
+        dest="$dest_root/$name"
+        link_or_copy "$skill" "$dest"
+        if [ "$DRY_RUN" = false ] && [ "$LINKED" = true ]; then
+          printf '%s\t%s\t%s\n' "$dest" "$skill" "$MODE" >> "$TMP_MANIFEST"
+        fi
+      done
       synced=$((synced + 1))
     done
   fi
 
-  # Commands -> Cursor + OpenCode
   if [ -d "$agents_dir/commands" ]; then
     for cmd in "$agents_dir/commands"/*; do
       [ -f "$cmd" ] || continue
       name=$(basename "$cmd")
       echo "  command: $name"
-      link_or_copy "$cmd" "$CURSOR_COMMANDS/$name"
-      link_or_copy "$cmd" "$OPENCODE_COMMANDS/$name"
+      for dest_root in "$CURSOR_COMMANDS" "$OPENCODE_COMMANDS"; do
+        dest="$dest_root/$name"
+        link_or_copy "$cmd" "$dest"
+        if [ "$DRY_RUN" = false ] && [ "$LINKED" = true ]; then
+          printf '%s\t%s\t%s\n' "$dest" "$cmd" "$MODE" >> "$TMP_MANIFEST"
+        fi
+      done
       synced=$((synced + 1))
     done
   fi
+
+  IFS=':'
 done
-unset IFS
+IFS="$old_ifs"
+
+if [ "$DRY_RUN" = false ]; then
+  mkdir -p "$(dirname "$STATE_FILE")"
+  mv "$TMP_MANIFEST" "$STATE_FILE"
+fi
 
 if [ "$synced" -eq 0 ]; then
   echo "Nothing to sync. Add skills or commands to a directory in AGENT_PATH."
